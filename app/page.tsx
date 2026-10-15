@@ -1,163 +1,284 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { ArrowRight, Calendar, GitCommit, ShieldCheck, Sparkles, Terminal } from 'lucide-react';
+import { 
+  ArrowRight, 
+  Calendar, 
+  CheckCircle2, 
+  Code2, 
+  GitBranch, 
+  GitCommit, 
+  Layers, 
+  Palette, 
+  ShieldCheck, 
+  Smartphone, 
+  Sparkles, 
+  Terminal, 
+  Zap 
+} from 'lucide-react';
+import { AppHeader } from '@/app/components/layout/AppHeader';
+import { Button } from '@/app/components/ui/Button';
+import { Badge } from '@/app/components/ui/Badge';
+import { Card } from '@/app/components/ui/Card';
+import { GitHubUser } from '@/lib/types/github';
 
 export default function HomePage() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [userLogin, setUserLogin] = useState<string | null>(null);
+  const [user, setUser] = useState<GitHubUser | null>(null);
+  const [previewCells, setPreviewCells] = useState<number[]>(() => {
+    // Generate an organic pattern for preview
+    return Array.from({ length: 7 * 24 }, (_, i) => {
+      const row = i % 7;
+      const isWeekend = row === 0 || row === 6;
+      if (Math.random() < (isWeekend ? 0.2 : 0.65)) {
+        return Math.floor(Math.random() * 4) + 1;
+      }
+      return 0;
+    });
+  });
+
+  const LEVEL_COLORS: Record<number, string> = {
+    0: 'rgba(255, 255, 255, 0.04)',
+    1: '#0e4429',
+    2: '#006d32',
+    3: '#26a641',
+    4: '#39d353',
+  };
 
   useEffect(() => {
     fetch('/api/auth/status')
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.user) {
-          setIsAuthenticated(true);
-          setUserLogin(data.user.login);
+          setUser(data.user);
         }
       })
       .catch(() => {});
   }, []);
 
+  const handlePreviewCellClick = (idx: number) => {
+    setPreviewCells(prev => {
+      const next = [...prev];
+      next[idx] = (next[idx] + 1) % 5;
+      return next;
+    });
+  };
+
   return (
     <div className="page-container">
-      {/* Top Navigation */}
-      <header className="header-nav">
-        <Link href="/" className="brand-badge">
-          <div className="brand-icon">⚡</div>
-          <span className="brand-title">Contra<span className="accent">Git</span></span>
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          {isAuthenticated ? (
-            <Link href="/dashboard" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-              Dashboard ({userLogin}) <ArrowRight size={15} />
-            </Link>
-          ) : (
-            <Link href="/auth" className="btn-ghost" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-              Sign In
-            </Link>
-          )}
-        </div>
-      </header>
+      {/* Responsive Navigation */}
+      <AppHeader user={user} activeNav="home" />
 
       {/* Hero Section */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', padding: '3rem 0' }}>
-        <div style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          background: 'rgba(16, 185, 129, 0.1)',
-          border: '1px solid rgba(16, 185, 129, 0.25)',
-          padding: '0.4rem 0.9rem',
-          borderRadius: '999px',
-          color: 'var(--emerald-400)',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          marginBottom: '1.5rem',
-          fontFamily: 'var(--font-mono)'
-        }}>
-          <Sparkles size={15} /> v1.0 • ARCHITECT YOUR GITHUB ACTIVITY
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '2.5rem 0 4rem' }}>
+        {/* Release Pill */}
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.25)',
+            padding: '0.4rem 0.9rem',
+            borderRadius: 'var(--radius-full)',
+            color: 'var(--emerald-400)',
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            marginBottom: '1.75rem',
+            fontFamily: 'var(--font-mono)',
+          }}
+        >
+          <Sparkles size={14} /> v2.0 • MODERN GITHUB ACTIVITY STUDIO
         </div>
 
-        <h1 style={{ fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', lineHeight: 1.1, maxWidth: '850px', marginBottom: '1.5rem' }}>
-          Take Complete Control of Your <span style={{ background: 'linear-gradient(135deg, #10b981, #38bdf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>GitHub Story</span>
+        {/* Hero Title */}
+        <h1
+          style={{
+            fontSize: 'clamp(2.4rem, 6.5vw, 4.5rem)',
+            lineHeight: 1.08,
+            maxWidth: '920px',
+            marginBottom: '1.5rem',
+            letterSpacing: '-0.035em',
+          }}
+        >
+          Architect Your <span className="text-gradient-emerald">GitHub Contributions</span> with Precision
         </h1>
 
-        <p style={{ fontSize: 'clamp(1rem, 2vw, 1.25rem)', color: 'var(--text-muted)', maxWidth: '620px', lineHeight: 1.6, marginBottom: '2.5rem' }}>
-          Lost your streak due to private repositories, client firewalls, or offline coding? 
-          <strong> ContraGit</strong> provides precision scheduling and natural distribution directly via GitHub’s native Git Data API.
+        {/* Hero Description */}
+        <p
+          style={{
+            fontSize: 'clamp(1rem, 2.2vw, 1.25rem)',
+            color: 'var(--text-secondary)',
+            maxWidth: '680px',
+            lineHeight: 1.6,
+            marginBottom: '2.5rem',
+          }}
+        >
+          Lost your contribution streak due to offline code, company firewalls, or private orgs? 
+          <strong> ContraGit</strong> provides interactive 52-week visual canvas drawing, pixel font stamping, and automated Git Data API scheduling.
         </p>
 
-        {/* CTA Group */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center', marginBottom: '4rem' }}>
-          <Link href={isAuthenticated ? "/dashboard" : "/auth"} className="btn-primary" style={{ fontSize: '1.05rem', padding: '0.9rem 2rem' }}>
-            {isAuthenticated ? 'Open Dashboard' : 'Get Started Free'} <ArrowRight size={18} />
+        {/* CTA Buttons */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.85rem', justifyContent: 'center', marginBottom: '4rem' }}>
+          <Link
+            href={user ? '/dashboard' : '/auth'}
+            className="btn btn-primary btn-lg"
+          >
+            {user ? 'Open Studio Dashboard' : 'Get Started with GitHub'} <ArrowRight size={18} />
           </Link>
-          <Link href="/instructions" className="btn-ghost" style={{ fontSize: '1.05rem', padding: '0.9rem 1.8rem' }}>
-            System Setup Guide
+          <Link
+            href="/instructions"
+            className="btn btn-secondary btn-lg"
+          >
+            Read System Guide
           </Link>
         </div>
 
-        {/* Visual Contribution Simulation Bar */}
-        <div className="glass-panel" style={{ width: '100%', maxWidth: '780px', padding: '1.5rem', marginBottom: '4rem', textAlign: 'left' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-dim)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
-              Organic Density Preview (Simulated)
-            </span>
+        {/* Interactive Mini-Studio Preview */}
+        <div
+          className="glass-panel"
+          style={{
+            width: '100%',
+            maxWidth: '820px',
+            padding: '1.75rem',
+            marginBottom: '5rem',
+            textAlign: 'left',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '1.25rem',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Palette size={16} color="var(--emerald-400)" />
+              <span style={{ fontSize: '0.85rem', fontWeight: 700, fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                Interactive Canvas Engine
+              </span>
+            </div>
             <div className="status-pill">
-              <span className="status-dot"></span> Live Engine
+              <span className="status-dot" /> Click any tile to paint
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(28, 1fr)', gap: '4px' }}>
-            {Array.from({ length: 140 }).map((_, i) => {
-              const densities = [
-                'rgba(255, 255, 255, 0.05)',
-                'rgba(16, 185, 129, 0.25)',
-                'rgba(16, 185, 129, 0.5)',
-                'rgba(16, 185, 129, 0.75)',
-                '#10b981',
-              ];
-              const level = (i * 7 + 13) % 5;
-              return (
+
+          {/* Mini Canvas Grid (24 weeks x 7 days) */}
+          <div style={{ overflowX: 'auto', paddingBottom: '0.5rem' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateRows: 'repeat(7, 12px)',
+                gridAutoFlow: 'column',
+                gap: '3px',
+                width: 'fit-content',
+              }}
+            >
+              {previewCells.map((level, i) => (
                 <div
                   key={i}
+                  onClick={() => handlePreviewCellClick(i)}
                   style={{
-                    aspectRatio: '1',
-                    borderRadius: '3px',
-                    backgroundColor: densities[level],
-                    border: level > 0 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(255, 255, 255, 0.04)',
-                    transition: 'transform 0.15s',
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '2px',
+                    backgroundColor: LEVEL_COLORS[level],
+                    border: level > 0 ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.04)',
+                    cursor: 'pointer',
+                    transition: 'transform 0.1s ease',
                   }}
-                  title={`Level ${level}`}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform = 'scale(1.25)';
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                  }}
+                  title={`Level ${level} (${level * 3} commits)`}
                 />
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Feature Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%' }}>
-          <div className="glass-panel" style={{ textAlign: 'left', padding: '1.5rem' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--emerald-400)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-              <Calendar size={20} />
-            </div>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Precision Scheduling</h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Choose your target date range, specific weekdays, and commit volume per day with granular steppers.
+        {/* Feature Highlights Grid */}
+        <section style={{ width: '100%', maxWidth: '1040px', textAlign: 'left', marginBottom: '5rem' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>
+              Engineered for Modern Developers
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
+              Built with Next.js 16, TypeScript, OOP services, and resilient serverless micro-batching.
             </p>
           </div>
 
-          <div className="glass-panel" style={{ textAlign: 'left', padding: '1.5rem' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-              <GitCommit size={20} />
-            </div>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>100% Native Commits</h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              Direct Git Data API calls create real blobs, trees, and commit objects that automatically register on your profile.
-            </p>
-          </div>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '1.5rem',
+            }}
+          >
+            <Card
+              title="52-Week Visual Canvas"
+              subtitle="Full calendar grid matrix (364 days)"
+              badge={<Badge variant="emerald"><Palette size={12} /> Studio</Badge>}
+            >
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                Click, drag, and draw your contribution art with intensity levels 0 through 4. Stamp text phrases or shapes (heart, space invader, zigzag) directly onto your schedule.
+              </p>
+            </Card>
 
-          <div className="glass-panel" style={{ textAlign: 'left', padding: '1.5rem' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(168, 85, 247, 0.1)', color: 'var(--accent-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
-              <ShieldCheck size={20} />
-            </div>
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>Zero Local Rebase</h3>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-              No messy terminal scripts, no git rebase headaches. Secure OAuth token handles transactions in the cloud.
-            </p>
+            <Card
+              title="Resilient Micro-Batching"
+              subtitle="Sleep & timeout immune"
+              badge={<Badge variant="cyan"><Zap size={12} /> Serverless</Badge>}
+            >
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                Stateless execution in micro-batches of 5 commits. Never hits Vercel timeouts. If your machine sleeps or connection drops, progress is safely saved on GitHub and auto-resumes.
+              </p>
+            </Card>
+
+            <Card
+              title="Mobile-First Architecture"
+              subtitle="Touch gestures & thumb controls"
+              badge={<Badge variant="muted"><Smartphone size={12} /> Responsive</Badge>}
+            >
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                Designed ground-up for phones and tablets. Features touch pan vs. draw toggles, grid scaling (1x to 1.5x), and a docked mobile bottom bar with quick deploy triggers.
+              </p>
+            </Card>
           </div>
-        </div>
+        </section>
+
+        {/* Clean Footer */}
+        <footer
+          style={{
+            width: '100%',
+            maxWidth: '1040px',
+            borderTop: '1px solid var(--border-subtle)',
+            paddingTop: '2rem',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            fontSize: '0.825rem',
+            color: 'var(--text-muted)',
+          }}
+        >
+          <div>
+            ContraGit • Released under the MIT License • Built with Next.js & TypeScript
+          </div>
+          <div style={{ display: 'flex', gap: '1.25rem' }}>
+            <Link href="/dashboard" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Studio</Link>
+            <Link href="/instructions" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>Documentation</Link>
+            <a href="https://github.com/Interittus13/gitcontra" target="_blank" rel="noreferrer" style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}>GitHub</a>
+          </div>
+        </footer>
       </main>
-
-      {/* Footer */}
-      <footer style={{ borderTop: '1px solid var(--border-color)', padding: '2rem 0 1rem', marginTop: '4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', color: 'var(--text-dim)', fontSize: '0.85rem' }}>
-        <div>ContraGit • Open Source Developer Productivity</div>
-        <div style={{ display: 'flex', gap: '1.25rem' }}>
-          <Link href="/instructions" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Setup Guide</Link>
-          <a href="https://github.com/Interittus13/gitcontra" target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>GitHub Repo</a>
-        </div>
-      </footer>
     </div>
   );
 }
