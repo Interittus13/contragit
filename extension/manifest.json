@@ -1,0 +1,13 @@
+{
+  "manifest_version": 3,
+  "name": "ContraGit",
+  "version": "1.0.0",
+  "description": "GitHub contribution scheduler and activity automation engine.",
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Open ContraGit"
+  },
+  "host_permissions": [
+    "https://api.github.com/*"
+  ]
+}
