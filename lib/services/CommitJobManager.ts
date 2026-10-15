@@ -103,8 +103,16 @@ export class CommitJobManager {
         const date = timestamps[i];
         const isoString = date.toISOString();
         const commitNum = i + 1;
-        const randomMsg = CommitJobManager.SAMPLE_MESSAGES[Math.floor(Math.random() * CommitJobManager.SAMPLE_MESSAGES.length)];
-        const commitMsg = `${randomMsg} [contra-#${commitNum}]`;
+        let commitMsg = '';
+        if (config.messageStyle === 'minimal') {
+          commitMsg = `Commit #${commitNum} — ${isoString.split('T')[0]}`;
+        } else if (config.messageStyle === 'custom') {
+          const prefix = config.customMessagePrefix?.trim() || 'update';
+          commitMsg = `${prefix} #${commitNum} — ${isoString.split('T')[0]}`;
+        } else {
+          const randomMsg = CommitJobManager.SAMPLE_MESSAGES[Math.floor(Math.random() * CommitJobManager.SAMPLE_MESSAGES.length)];
+          commitMsg = `${randomMsg} [contra-#${commitNum}]`;
+        }
 
         // Create blob
         const blob = await gitClient.createBlob(
