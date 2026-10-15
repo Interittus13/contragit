@@ -199,17 +199,21 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
     return Object.values(matrix).filter(c => (c || 0) > 0).length;
   }, [matrix]);
 
-  // Month labels positioning
+  // Month labels positioning with minimum 3-column spacing to prevent text collisions
   const monthLabels = useMemo(() => {
     const labels: Array<{ name: string; colIndex: number }> = [];
-    let lastMonth = -1;
+    let lastMonth = calendarGrid[0]?.[0]?.dateObj?.getMonth() ?? -1;
+    let lastColIdx = -10;
 
     calendarGrid.forEach((week, colIdx) => {
       const firstDay = week[0]?.dateObj;
       if (firstDay) {
         const m = firstDay.getMonth();
-        if (m !== lastMonth && colIdx > 0 && colIdx < 50) {
-          labels.push({ name: MONTH_NAMES[m], colIndex: colIdx });
+        if (m !== lastMonth && colIdx <= 49) {
+          if (colIdx - lastColIdx >= 3) {
+            labels.push({ name: MONTH_NAMES[m], colIndex: colIdx });
+            lastColIdx = colIdx;
+          }
           lastMonth = m;
         }
       }

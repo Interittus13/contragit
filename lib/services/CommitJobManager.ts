@@ -62,6 +62,10 @@ export class CommitJobManager {
     const targetBranch = (config.branch || 'main').trim();
     const pushToRemote = Boolean(config.pushToRemote);
 
+    let branchName = targetBranch;
+    let currentCommitSha: string | null = null;
+    let initialSha: string | null = null;
+
     try {
       // 1. Validate repo exists
       const repoCheck = await gitClient.validateRepository(owner, repo, user.accessToken);
@@ -71,10 +75,9 @@ export class CommitJobManager {
         return;
       }
 
-      const branchName = targetBranch || repoCheck.defaultBranch || 'main';
+      branchName = targetBranch || repoCheck.defaultBranch || 'main';
 
       // 2. Fetch latest commit & base tree
-      let currentCommitSha: string;
       let baseTreeSha: string;
 
       try {
@@ -85,7 +88,8 @@ export class CommitJobManager {
       } catch (err: any) {
         if (err.status === 404 || err.status === 409) {
           // Fallback to default branch
-          const defRef = await gitClient.getBranchRef(owner, repo, repoCheck.defaultBranch || 'main', user.accessToken);
+          branchName = repoCheck.defaultBranch || 'main';
+          const defRef = await gitClient.getBranchRef(owner, repo, branchName, user.accessToken);
           currentCommitSha = defRef.sha;
           const defCommit = await gitClient.getCommit(owner, repo, currentCommitSha, user.accessToken);
           baseTreeSha = defCommit.treeSha;
@@ -94,11 +98,16 @@ export class CommitJobManager {
         }
       }
 
-      const initialSha = currentCommitSha;
+      initialSha = currentCommitSha;
 
-      // 3. Sequential Commit Generation with Organic Backdating
+      // 3. Sequential Commit Generation with Organic Backdating & Pacing
       for (let i = 0; i < timestamps.length; i++) {
         if (job.status !== 'running') break;
+
+        // Pacing delay (180ms) between commits to prevent GitHub secondary rate limit spikes
+        if (i > 0) {
+          await new Promise(resolve => setTimeout(resolve, 180));
+        }
 
         const date = timestamps[i];
         const isoString = date.toISOString();
@@ -146,7 +155,7 @@ export class CommitJobManager {
           repo,
           commitMsg,
           tree.sha,
-          [currentCommitSha],
+          currentCommitSha ? [currentCommitSha] : [],
           author,
           user.accessToken
         );
@@ -154,6 +163,15 @@ export class CommitJobManager {
         currentCommitSha = newCommit.sha;
         baseTreeSha = tree.sha;
         job.completed = commitNum;
+
+        // Periodic checkpoint every 25 commits to continuously secure progress to remote
+        if (pushToRemote && commitNum % 25 === 0 && currentCommitSha !== initialSha) {
+          try {
+            await gitClient.updateBranchRef(owner, repo, branchName, currentCommitSha, true, user.accessToken);
+          } catch (refErr) {
+            console.warn('[CommitJobManager] Periodic ref checkpoint warning:', refErr);
+          }
+        }
       }
 
       // 4. Update Branch Reference if pushToRemote is enabled
@@ -174,7 +192,19 @@ export class CommitJobManager {
       }
     } catch (error: any) {
       job.status = 'failed';
-      job.error = error.message || 'An error occurred during commit generation.';
+      let errorMsg = error.message || 'An error occurred during commit generation.';
+
+      // Critical Recovery: If commits were created prior to failure, push what we have so progress is never lost
+      if (pushToRemote && currentCommitSha && currentCommitSha !== initialSha) {
+        try {
+          await gitClient.updateBranchRef(owner, repo, branchName, currentCommitSha, true, user.accessToken);
+          errorMsg += ` (Saved ${job.completed} commits created prior to failure to ${branchName})`;
+        } catch (saveErr) {
+          console.error('[CommitJobManager] Failed to update branch ref on failure:', saveErr);
+        }
+      }
+
+      job.error = errorMsg;
     }
   }
 }
