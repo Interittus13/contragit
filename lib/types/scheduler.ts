@@ -41,7 +41,7 @@ export interface CommitJob {
   total: number;
   completed: number;
   failed: number;
-  status: 'pending' | 'running' | 'completed' | 'failed';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'paused';
   error?: string;
   result?: {
     message: string;
@@ -50,4 +50,31 @@ export interface CommitJob {
     };
   };
   startTime: number;
+}
+
+export interface CommitBatchItem {
+  timestamp: string;
+  message: string;
+  fileIndex: number;
+}
+
+export interface CommitBatchRequest {
+  repoOwner: string;
+  repoName: string;
+  branch: string;
+  pushToRemote: boolean;
+  parentCommitSha?: string | null;
+  baseTreeSha?: string | null;
+  batchIndex: number;
+  totalCommits: number;
+  commits: CommitBatchItem[];
+}
+
+export interface CommitBatchResponse {
+  success: boolean;
+  message: string;
+  completedBatchSize?: number;
+  lastCommitSha?: string;
+  lastTreeSha?: string;
+  branch?: string;
 }

@@ -1,5 +1,10 @@
 import { GitHubUser, GitTreeItem } from '../types/github';
-import { ScheduleConfig, CommitJob } from '../types/scheduler';
+import { 
+  ScheduleConfig, 
+  CommitJob, 
+  CommitBatchRequest, 
+  CommitBatchResponse 
+} from '../types/scheduler';
 import { GitHubApiClient } from './GitHubApiClient';
 import { ScheduleEngine } from './ScheduleEngine';
 
@@ -206,6 +211,113 @@ export class CommitJobManager {
 
       job.error = errorMsg;
     }
+  }
+
+  /**
+   * Executes a stateless batch of commits.
+   * Ideal for serverless platforms (Vercel) as each batch runs in ~1.5s,
+   * avoiding function timeouts and eliminating in-memory state dependencies.
+   */
+  public async executeCommitBatch(
+    user: GitHubUser,
+    request: CommitBatchRequest,
+    gitClient: GitHubApiClient
+  ): Promise<CommitBatchResponse> {
+    const owner = request.repoOwner.trim();
+    const repo = request.repoName.trim();
+    const targetBranch = request.branch.trim() || 'main';
+    const pushToRemote = Boolean(request.pushToRemote);
+
+    // 1. Resolve starting commit and tree SHA if not provided (first batch)
+    let currentCommitSha = request.parentCommitSha || null;
+    let baseTreeSha = request.baseTreeSha || null;
+    let branchName = targetBranch;
+
+    if (!currentCommitSha || !baseTreeSha) {
+      const repoCheck = await gitClient.validateRepository(owner, repo, user.accessToken);
+      if (!repoCheck.exists) {
+        throw new Error(repoCheck.message || 'Repository not found or access denied.');
+      }
+      branchName = targetBranch || repoCheck.defaultBranch || 'main';
+
+      try {
+        const refData = await gitClient.getBranchRef(owner, repo, branchName, user.accessToken);
+        currentCommitSha = refData.sha;
+        const commitData = await gitClient.getCommit(owner, repo, currentCommitSha, user.accessToken);
+        baseTreeSha = commitData.treeSha;
+      } catch (err: any) {
+        if (err.status === 404 || err.status === 409) {
+          branchName = repoCheck.defaultBranch || 'main';
+          const defRef = await gitClient.getBranchRef(owner, repo, branchName, user.accessToken);
+          currentCommitSha = defRef.sha;
+          const defCommit = await gitClient.getCommit(owner, repo, currentCommitSha, user.accessToken);
+          baseTreeSha = defCommit.treeSha;
+        } else {
+          throw err;
+        }
+      }
+    }
+
+    // 2. Process this small batch of commits sequentially
+    for (let i = 0; i < request.commits.length; i++) {
+      const item = request.commits[i];
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 150));
+      }
+
+      // Create blob
+      const blob = await gitClient.createBlob(
+        owner,
+        repo,
+        `ContraGit automation checkpoint: ${item.fileIndex} on ${item.timestamp}\n`,
+        user.accessToken
+      );
+
+      // Create tree
+      const treeItems: GitTreeItem[] = [
+        {
+          path: `contra_log_${item.fileIndex}.txt`,
+          mode: '100644',
+          type: 'blob',
+          sha: blob.sha,
+        },
+      ];
+
+      const tree = await gitClient.createTree(owner, repo, baseTreeSha, treeItems, user.accessToken);
+
+      const author = {
+        name: user.login,
+        email: user.email || `${user.login}@users.noreply.github.com`,
+        date: item.timestamp,
+      };
+
+      const newCommit = await gitClient.createCommit(
+        owner,
+        repo,
+        item.message,
+        tree.sha,
+        currentCommitSha ? [currentCommitSha] : [],
+        author,
+        user.accessToken
+      );
+
+      currentCommitSha = newCommit.sha;
+      baseTreeSha = tree.sha;
+    }
+
+    // 3. Update branch ref for this batch if pushing
+    if (pushToRemote && currentCommitSha) {
+      await gitClient.updateBranchRef(owner, repo, branchName, currentCommitSha, true, user.accessToken);
+    }
+
+    return {
+      success: true,
+      message: `Completed batch of ${request.commits.length} commits.`,
+      completedBatchSize: request.commits.length,
+      lastCommitSha: currentCommitSha || '',
+      lastTreeSha: baseTreeSha || '',
+      branch: branchName,
+    };
   }
 }
 

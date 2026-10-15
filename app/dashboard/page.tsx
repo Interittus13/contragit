@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Calendar,
@@ -12,6 +12,7 @@ import {
   Loader2,
   LogOut,
   Palette,
+  Pause,
   Play,
   RotateCcw,
   Sliders,
@@ -29,11 +30,13 @@ import {
   ScheduleCalculation, 
   CommitJob,
   CustomCommitMatrix,
-  CommitMessageStyle
+  CommitMessageStyle,
+  CommitBatchItem
 } from '@/lib/types/scheduler';
 import { GitHubRepository } from '@/lib/types/github';
 import { GitHubIcon } from '@/app/components/GitHubIcon';
 import { HeatmapCanvas } from '@/app/components/HeatmapCanvas';
+import { scheduleEngine } from '@/lib/services/ScheduleEngine';
 
 const WEEKDAYS: { key: Weekday; label: string }[] = [
   { key: 'monday', label: 'Mon' },
@@ -100,10 +103,19 @@ export default function DashboardPage() {
   const [calculation, setCalculation] = useState<ScheduleCalculation | null>(null);
   const [showSummaryModal, setShowSummaryModal] = useState<boolean>(false);
 
-  // Job execution state
+  // Job execution state & Batch Pipeline refs
   const [activeJob, setActiveJob] = useState<CommitJob | null>(null);
   const [showProgressModal, setShowProgressModal] = useState<boolean>(false);
   const [startingJob, setStartingJob] = useState<boolean>(false);
+
+  const isPausedRef = useRef<boolean>(false);
+  const cancelRef = useRef<boolean>(false);
+  const batchStateRef = useRef<{
+    allCommits: CommitBatchItem[];
+    currentIndex: number;
+    lastCommitSha: string | null;
+    lastTreeSha: string | null;
+  } | null>(null);
 
   // Community support feedback
   const [socialMessage, setSocialMessage] = useState<string | null>(null);
@@ -251,59 +263,208 @@ export default function DashboardPage() {
     }
   };
 
-  // Start commit generation job
+  // Helper to run the batched commit pipeline
+  const runBatchLoop = async (
+    allCommits: CommitBatchItem[],
+    startIndex: number,
+    initialCommitSha: string | null,
+    initialTreeSha: string | null
+  ) => {
+    const BATCH_SIZE = 5;
+    let currentCommitSha = initialCommitSha;
+    let currentTreeSha = initialTreeSha;
+    let completed = startIndex;
+
+    isPausedRef.current = false;
+    cancelRef.current = false;
+
+    try {
+      for (let i = startIndex; i < allCommits.length; i += BATCH_SIZE) {
+        if (cancelRef.current) {
+          setActiveJob(prev => prev ? { ...prev, status: 'failed', error: 'Generation stopped by user.' } : null);
+          return;
+        }
+
+        if (isPausedRef.current) {
+          batchStateRef.current = {
+            allCommits,
+            currentIndex: completed,
+            lastCommitSha: currentCommitSha,
+            lastTreeSha: currentTreeSha,
+          };
+          setActiveJob(prev => prev ? { ...prev, status: 'paused', completed } : null);
+          return;
+        }
+
+        const batch = allCommits.slice(i, i + BATCH_SIZE);
+
+        const res = await fetch('/api/commit-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            repoOwner: repoOwner || user?.login,
+            repoName: selectedRepo,
+            branch,
+            pushToRemote,
+            parentCommitSha: currentCommitSha,
+            baseTreeSha: currentTreeSha,
+            batchIndex: Math.floor(i / BATCH_SIZE),
+            totalCommits: allCommits.length,
+            commits: batch,
+          }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || `Server error (status ${res.status}) on batch`);
+        }
+
+        completed += batch.length;
+        currentCommitSha = data.lastCommitSha;
+        currentTreeSha = data.lastTreeSha;
+
+        // Keep batch checkpoint updated in ref
+        batchStateRef.current = {
+          allCommits,
+          currentIndex: completed,
+          lastCommitSha: currentCommitSha,
+          lastTreeSha: currentTreeSha,
+        };
+
+        setActiveJob(prev => prev ? {
+          ...prev,
+          completed,
+        } : null);
+      }
+
+      // All batches completed successfully
+      setActiveJob(prev => prev ? {
+        ...prev,
+        status: 'completed',
+        completed: allCommits.length,
+        result: {
+          message: `Successfully generated ${allCommits.length} commits!`,
+          pushResult: {
+            message: pushToRemote
+              ? `Pushed ${allCommits.length} commits to ${repoOwner || user?.login}/${selectedRepo}:${branch}`
+              : `Created ${allCommits.length} commits locally in tree (push disabled).`,
+          },
+        },
+      } : null);
+      batchStateRef.current = null;
+    } catch (err: any) {
+      console.warn('[ContraGit] Batch error or sleep interruption:', err);
+      // Preserve progress in paused state so user can resume anytime!
+      batchStateRef.current = {
+        allCommits,
+        currentIndex: completed,
+        lastCommitSha: currentCommitSha,
+        lastTreeSha: currentTreeSha,
+      };
+
+      setActiveJob(prev => prev ? {
+        ...prev,
+        status: 'paused',
+        completed,
+        error: `Connection paused or interrupted (${err.message || 'network drop'}). Saved ${completed} commits to GitHub.`,
+      } : null);
+    }
+  };
+
+  // Start commit generation job via stateless batches
   const handleConfirmAndStart = async () => {
     setShowSummaryModal(false);
     setStartingJob(true);
     setShowProgressModal(true);
 
     try {
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: activeMode,
-          startDate,
-          endDate,
-          repoOwner: repoOwner || user?.login,
-          repoName: selectedRepo,
-          branch,
-          pushToRemote,
-          weekdayCounts,
-          customMatrix,
-          messageStyle,
-          customMessagePrefix,
-        }),
-      });
+      const config = {
+        mode: activeMode,
+        startDate,
+        endDate,
+        repoOwner: repoOwner || user?.login,
+        repoName: selectedRepo,
+        branch,
+        pushToRemote,
+        weekdayCounts,
+        customMatrix,
+        messageStyle,
+        customMessagePrefix,
+      };
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Job startup failed');
+      const timestamps = scheduleEngine.generateCommitTimestamps(config);
+      if (timestamps.length === 0) {
+        throw new Error('No eligible commits found in configuration.');
       }
 
-      const jobId = data.jobId;
+      const sampleMessages = [
+        'feat: implement core workflow updates',
+        'refactor: streamline data pipeline',
+        'fix: resolve edge condition in event loop',
+        'docs: update usage notes and api references',
+        'perf: improve rendering efficiency',
+        'chore: update workspace dependencies',
+        'style: format code according to styleguide',
+        'test: add regression test cases',
+        'ci: optimize deployment workflow pipeline',
+      ];
 
-      // Poll status
-      const pollInterval = setInterval(async () => {
-        try {
-          const statusRes = await fetch(`/api/status?jobId=${jobId}`);
-          const statusData = await statusRes.json();
-          if (statusData.success && statusData.job) {
-            setActiveJob(statusData.job);
-            if (statusData.job.status === 'completed' || statusData.job.status === 'failed') {
-              clearInterval(pollInterval);
-            }
-          }
-        } catch {
-          // ignore transient poll error
+      const allCommits: CommitBatchItem[] = timestamps.map((date, i) => {
+        const isoString = date.toISOString();
+        const commitNum = i + 1;
+        let message = '';
+        if (config.messageStyle === 'minimal') {
+          message = `Commit #${commitNum} — ${isoString.split('T')[0]}`;
+        } else if (config.messageStyle === 'custom') {
+          const prefix = config.customMessagePrefix?.trim() || 'update';
+          message = `${prefix} #${commitNum} — ${isoString.split('T')[0]}`;
+        } else {
+          const randomMsg = sampleMessages[Math.floor(Math.random() * sampleMessages.length)];
+          message = `${randomMsg} [contra-#${commitNum}]`;
         }
-      }, 500);
+        return {
+          timestamp: isoString,
+          message,
+          fileIndex: commitNum,
+        };
+      });
+
+      setActiveJob({
+        id: `batch_${Date.now()}`,
+        userLogin: user?.login || 'user',
+        repository: `${repoOwner || user?.login}/${selectedRepo}`,
+        dateRange: `${startDate} to ${endDate}`,
+        total: allCommits.length,
+        completed: 0,
+        failed: 0,
+        status: 'running',
+        startTime: Date.now(),
+      });
+
+      await runBatchLoop(allCommits, 0, null, null);
     } catch (err: any) {
       alert(err.message || 'Failed to start generation job');
       setShowProgressModal(false);
     } finally {
       setStartingJob(false);
     }
+  };
+
+  const handlePauseGeneration = () => {
+    isPausedRef.current = true;
+  };
+
+  const handleResumeGeneration = async () => {
+    if (!batchStateRef.current) return;
+    const { allCommits, currentIndex, lastCommitSha, lastTreeSha } = batchStateRef.current;
+    setActiveJob(prev => prev ? { ...prev, status: 'running', error: undefined } : null);
+    await runBatchLoop(allCommits, currentIndex, lastCommitSha, lastTreeSha);
+  };
+
+  const handleStopAndKeep = () => {
+    batchStateRef.current = null;
+    setShowProgressModal(false);
+    setActiveJob(null);
   };
 
   // Voluntary Social actions
@@ -789,6 +950,10 @@ export default function DashboardPage() {
                 <>
                   <CheckCircle size={22} color="var(--emerald-400)" /> Schedule Completed!
                 </>
+              ) : activeJob?.status === 'paused' ? (
+                <>
+                  <Pause size={22} color="#f59e0b" /> Generation Paused
+                </>
               ) : activeJob?.status === 'failed' ? (
                 <>
                   <X size={22} color="var(--danger)" /> Generation Failed
@@ -814,6 +979,12 @@ export default function DashboardPage() {
               <span>{progressPercent}%</span>
             </div>
 
+            {activeJob?.status === 'paused' && (
+              <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid #f59e0b', padding: '1rem', borderRadius: 'var(--radius-md)', color: '#fbbf24', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+                <strong>Status:</strong> {activeJob.error || `Paused at ${activeJob.completed} / ${activeJob.total} commits. Commits up to this checkpoint are permanently saved to GitHub.`}
+              </div>
+            )}
+
             {activeJob?.status === 'failed' && (
               <div style={{ background: 'rgba(244, 63, 94, 0.1)', border: '1px solid var(--danger)', padding: '1rem', borderRadius: 'var(--radius-md)', color: '#fca5a5', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
                 <strong>Error:</strong> {activeJob.error}
@@ -829,8 +1000,27 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              {(activeJob?.status === 'completed' || activeJob?.status === 'failed') ? (
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+              {activeJob?.status === 'paused' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleStopAndKeep}
+                    className="btn-ghost"
+                    style={{ fontSize: '0.85rem' }}
+                  >
+                    Done (Keep Commits)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResumeGeneration}
+                    className="btn-primary"
+                    style={{ gap: '0.4rem', fontSize: '0.85rem' }}
+                  >
+                    <Play size={15} /> Resume Generation
+                  </button>
+                </>
+              ) : activeJob?.status === 'completed' ? (
                 <>
                   <button
                     type="button"
@@ -839,20 +1029,49 @@ export default function DashboardPage() {
                   >
                     Close
                   </button>
-                  {activeJob?.status === 'completed' && (
-                    <a
-                      href={`https://github.com/${repoOwner}/${selectedRepo}/commits/${branch}`}
-                      target="_blank"
-                      rel="noreferrer"
+                  <a
+                    href={`https://github.com/${repoOwner}/${selectedRepo}/commits/${branch}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-primary"
+                  >
+                    View on GitHub <ExternalLink size={16} />
+                  </a>
+                </>
+              ) : activeJob?.status === 'failed' ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { setShowProgressModal(false); setActiveJob(null); }}
+                    className="btn-ghost"
+                  >
+                    Close
+                  </button>
+                  {batchStateRef.current && (
+                    <button
+                      type="button"
+                      onClick={handleResumeGeneration}
                       className="btn-primary"
+                      style={{ gap: '0.4rem' }}
                     >
-                      View on GitHub <ExternalLink size={16} />
-                    </a>
+                      <RotateCcw size={15} /> Retry Remaining
+                    </button>
                   )}
                 </>
               ) : (
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
-                  Please do not close this window while generating commits...
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-dim)' }}>
+                    Deploying commits safely...
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handlePauseGeneration}
+                    className="btn-ghost"
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', gap: '0.35rem' }}
+                    title="Pause generation safely"
+                  >
+                    <Pause size={14} /> Pause
+                  </button>
                 </div>
               )}
             </div>
