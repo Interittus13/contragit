@@ -24,7 +24,12 @@ export class GitHubApiClient {
   private readonly baseUrl: string = 'https://api.github.com';
   private readonly userAgent: string = 'ContraGit';
 
-  private async request<T>(endpoint: string, options: RequestInit = {}, token?: string): Promise<T> {
+  private async request<T>(
+    endpoint: string, 
+    options: RequestInit = {}, 
+    token?: string,
+    maxRetries: number = 3
+  ): Promise<T> {
     const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`;
     const headers: Record<string, string> = {
       Accept: 'application/vnd.github+json',
@@ -33,27 +38,79 @@ export class GitHubApiClient {
       ...(options.headers as Record<string, string> || {}),
     };
 
-    const response = await fetch(url, { ...options, headers });
-    const contentType = response.headers.get('content-type') || '';
-    const payload = contentType.includes('application/json')
-      ? await response.json().catch(() => ({}))
-      : await response.text().catch(() => '');
+    let attempt = 0;
+    while (attempt <= maxRetries) {
+      attempt++;
+      try {
+        const response = await fetch(url, { ...options, headers });
 
-    if (!response.ok) {
-      const detail = typeof payload === 'string' ? payload : (payload.message || JSON.stringify(payload));
-      const urlPath = new URL(url).pathname;
-      const statusText = response.status === 404
-        ? `Not found: ${urlPath}`
-        : response.status === 422
-          ? `Validation failed for ${urlPath}: ${detail}`
-          : response.status === 409
-            ? `Conflict on ${urlPath}: ${detail}`
-            : `GitHub API error (${response.status}) on ${urlPath}: ${detail}`;
+        // Handle primary or secondary rate limits (429 or 403 with retry-after)
+        if (response.status === 429 || (response.status === 403 && response.headers.get('retry-after'))) {
+          const retryAfterSec = parseInt(response.headers.get('retry-after') || '3', 10);
+          if (attempt <= maxRetries) {
+            console.warn(`[GitHubApiClient] Rate limit reached on ${endpoint}. Backing off for ${retryAfterSec}s (attempt ${attempt}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, (retryAfterSec + 1) * 1000));
+            continue;
+          }
+        }
 
-      throw new GitHubApiError(statusText, response.status, detail);
+        const contentType = response.headers.get('content-type') || '';
+        const payload = contentType.includes('application/json')
+          ? await response.json().catch(() => ({}))
+          : await response.text().catch(() => '');
+
+        if (!response.ok) {
+          const detail = typeof payload === 'string' ? payload : (payload.message || JSON.stringify(payload));
+          
+          // Check for GitHub secondary rate limit messages in response body
+          const isSecondaryRateLimit = 
+            response.status === 403 && 
+            typeof detail === 'string' && 
+            (detail.toLowerCase().includes('secondary rate limit') || detail.toLowerCase().includes('abuse'));
+
+          if (isSecondaryRateLimit && attempt <= maxRetries) {
+            const backoffMs = attempt * 3500;
+            console.warn(`[GitHubApiClient] Secondary rate limit on ${endpoint}. Pausing for ${backoffMs}ms before retry (attempt ${attempt}/${maxRetries})...`);
+            await new Promise(resolve => setTimeout(resolve, backoffMs));
+            continue;
+          }
+
+          const urlPath = new URL(url).pathname;
+          const statusText = response.status === 404
+            ? `Not found: ${urlPath}`
+            : response.status === 422
+              ? `Validation failed for ${urlPath}: ${detail}`
+              : response.status === 409
+                ? `Conflict on ${urlPath}: ${detail}`
+                : `GitHub API error (${response.status}) on ${urlPath}: ${detail}`;
+
+          throw new GitHubApiError(statusText, response.status, detail);
+        }
+
+        return payload as T;
+      } catch (err: any) {
+        if (err instanceof GitHubApiError) {
+          throw err;
+        }
+
+        // Handle network/socket failures (e.g. fetch failed, socket closed, ECONNRESET, ETIMEDOUT)
+        if (attempt <= maxRetries) {
+          const backoffMs = attempt * 1500;
+          console.warn(`[GitHubApiClient] Network failure (${err.message || 'fetch failed'}). Retrying ${endpoint} in ${backoffMs}ms (attempt ${attempt}/${maxRetries})...`);
+          await new Promise(resolve => setTimeout(resolve, backoffMs));
+          continue;
+        }
+
+        const causeMsg = err.cause?.message ? ` (${err.cause.message})` : '';
+        throw new GitHubApiError(
+          `Connection to GitHub failed: ${err.message || 'fetch failed'}${causeMsg}. Please verify network stability or GitHub API status.`,
+          500,
+          err.stack || ''
+        );
+      }
     }
 
-    return payload as T;
+    throw new GitHubApiError(`Failed request to ${endpoint} after ${maxRetries} retries`, 500);
   }
 
   public async getAuthenticatedUser(accessToken: string): Promise<GitHubUser> {
