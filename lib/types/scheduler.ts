@@ -5,7 +5,12 @@ export type WeekdayCounts = Record<Weekday, number>;
 export type FilterPreset = 'all' | 'even' | 'odd' | 'custom';
 export type FilterOption = 'min' | 'max';
 
+export type CustomCommitMatrix = Record<string, number>; // key: YYYY-MM-DD -> commit count (0..20)
+
+export type CommitMessageStyle = 'conventional' | 'minimal' | 'custom';
+
 export interface ScheduleConfig {
+  mode?: 'standard' | 'canvas';
   startDate: string;
   endDate: string;
   repoOwner?: string;
@@ -14,6 +19,9 @@ export interface ScheduleConfig {
   pushToRemote?: boolean;
   weekdayCounts?: Partial<WeekdayCounts>;
   filterPreset?: FilterPreset;
+  customMatrix?: CustomCommitMatrix;
+  messageStyle?: CommitMessageStyle;
+  customMessagePrefix?: string;
 }
 
 export interface ScheduleCalculation {

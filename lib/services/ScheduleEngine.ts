@@ -4,7 +4,8 @@ import {
   ScheduleConfig, 
   ScheduleCalculation, 
   FilterPreset, 
-  FilterOption 
+  FilterOption,
+  CustomCommitMatrix
 } from '../types/scheduler';
 
 export class ScheduleEngine {
@@ -65,7 +66,6 @@ export class ScheduleEngine {
       } else if (preset === 'odd') {
         match = dayNum === 0 || dayNum % 2 === 1;
       } else if (preset === 'custom') {
-        // Random 0 to 5
         result[day] = Math.floor(Math.random() * 6);
         return;
       }
@@ -77,6 +77,14 @@ export class ScheduleEngine {
   }
 
   public calculate(config: ScheduleConfig): ScheduleCalculation {
+    const repoLabel = `${config.repoOwner || 'user'}/${config.repoName || 'repository'}`;
+
+    // 1. Matrix / Canvas Mode
+    if (config.mode === 'canvas' && config.customMatrix) {
+      return this.calculateFromMatrix(config.customMatrix, repoLabel);
+    }
+
+    // 2. Standard Weekday Mode
     const startDate = new Date(config.startDate);
     const endDate = new Date(config.endDate);
 
@@ -112,7 +120,6 @@ export class ScheduleEngine {
     }
 
     const estimatedSeconds = Math.max(3, Math.round(totalCommits * 1.5));
-    const repoLabel = `${config.repoOwner || 'user'}/${config.repoName || 'repository'}`;
 
     return {
       repository: repoLabel,
@@ -124,7 +131,68 @@ export class ScheduleEngine {
     };
   }
 
+  public calculateFromMatrix(matrix: CustomCommitMatrix, repoLabel: string): ScheduleCalculation {
+    const dates = Object.keys(matrix)
+      .filter(dateStr => (matrix[dateStr] || 0) > 0)
+      .sort();
+
+    let totalCommits = 0;
+    const dailyBreakdown: WeekdayCounts = {
+      monday: 0,
+      tuesday: 0,
+      wednesday: 0,
+      thursday: 0,
+      friday: 0,
+      saturday: 0,
+      sunday: 0,
+    };
+
+    dates.forEach(dStr => {
+      const count = matrix[dStr];
+      const d = new Date(dStr + 'T12:00:00Z');
+      const dayName = ScheduleEngine.INDEX_TO_WEEKDAY[d.getUTCDay()];
+      dailyBreakdown[dayName] += count;
+      totalCommits += count;
+    });
+
+    const dateRange = dates.length > 0
+      ? `${new Date(dates[0]).toDateString()} to ${new Date(dates[dates.length - 1]).toDateString()}`
+      : 'Empty canvas';
+
+    return {
+      repository: repoLabel,
+      dateRange,
+      eligibleDays: dates.length,
+      totalCommits,
+      dailyBreakdown,
+      estimatedSeconds: Math.max(3, Math.round(totalCommits * 1.5)),
+    };
+  }
+
   public generateCommitTimestamps(config: ScheduleConfig): Date[] {
+    // 1. Matrix / Canvas Mode
+    if (config.mode === 'canvas' && config.customMatrix) {
+      const timestamps: Date[] = [];
+      const dates = Object.keys(config.customMatrix)
+        .filter(dateStr => (config.customMatrix![dateStr] || 0) > 0)
+        .sort();
+
+      dates.forEach(dStr => {
+        const count = config.customMatrix![dStr];
+        for (let i = 0; i < count; i++) {
+          const commitDate = new Date(dStr + 'T00:00:00');
+          const hour = 9 + Math.floor((11 / Math.max(1, count)) * i);
+          const minute = Math.floor(Math.random() * 59);
+          const second = Math.floor(Math.random() * 59);
+          commitDate.setHours(hour, minute, second, 0);
+          timestamps.push(commitDate);
+        }
+      });
+
+      return timestamps;
+    }
+
+    // 2. Standard Weekday Mode
     const startDate = new Date(config.startDate);
     const endDate = new Date(config.endDate);
 
@@ -142,7 +210,6 @@ export class ScheduleEngine {
 
       for (let i = 0; i < dayCount; i++) {
         const commitDate = new Date(cur);
-        // Distribute commit hours between 09:00 and 20:00 organically
         const hour = 9 + Math.floor((11 / Math.max(1, dayCount)) * i);
         const minute = Math.floor(Math.random() * 59);
         const second = Math.floor(Math.random() * 59);

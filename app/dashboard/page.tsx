@@ -11,18 +11,29 @@ import {
   GitCommit,
   Loader2,
   LogOut,
+  Palette,
   Play,
   RotateCcw,
   Sliders,
   Sparkles,
   Star,
-  UserCheck,
   UserPlus,
+  Wand2,
   X
 } from 'lucide-react';
-import { GitHubIcon } from '@/app/components/GitHubIcon';
-import { Weekday, WeekdayCounts, FilterPreset, FilterOption, ScheduleCalculation, CommitJob } from '@/lib/types/scheduler';
+import { 
+  Weekday, 
+  WeekdayCounts, 
+  FilterPreset, 
+  FilterOption, 
+  ScheduleCalculation, 
+  CommitJob,
+  CustomCommitMatrix,
+  CommitMessageStyle
+} from '@/lib/types/scheduler';
 import { GitHubRepository } from '@/lib/types/github';
+import { GitHubIcon } from '@/app/components/GitHubIcon';
+import { HeatmapCanvas } from '@/app/components/HeatmapCanvas';
 
 const WEEKDAYS: { key: Weekday; label: string }[] = [
   { key: 'monday', label: 'Mon' },
@@ -36,6 +47,9 @@ const WEEKDAYS: { key: Weekday; label: string }[] = [
 
 export default function DashboardPage() {
   const router = useRouter();
+
+  // Mode switcher: standard vs canvas
+  const [activeMode, setActiveMode] = useState<'standard' | 'canvas'>('standard');
 
   // User state
   const [user, setUser] = useState<{ login: string; id: number | null; email: string | null } | null>(null);
@@ -60,6 +74,11 @@ export default function DashboardPage() {
   const [branch, setBranch] = useState<string>('main');
   const [pushToRemote, setPushToRemote] = useState<boolean>(true);
 
+  // Commit message customization
+  const [messageStyle, setMessageStyle] = useState<CommitMessageStyle>('conventional');
+  const [customMessagePrefix, setCustomMessagePrefix] = useState<string>('feat: ContraGit update');
+
+  // Weekday counts for standard mode
   const [weekdayCounts, setWeekdayCounts] = useState<WeekdayCounts>({
     monday: 5,
     tuesday: 5,
@@ -69,6 +88,9 @@ export default function DashboardPage() {
     saturday: 0,
     sunday: 0,
   });
+
+  // Canvas Matrix state for visual studio
+  const [customMatrix, setCustomMatrix] = useState<CustomCommitMatrix>({});
 
   const [activeFilter, setActiveFilter] = useState<FilterPreset>('all');
   const [activeOption, setActiveOption] = useState<FilterOption>('max');
@@ -190,18 +212,28 @@ export default function DashboardPage() {
       return;
     }
 
+    if (activeMode === 'canvas') {
+      const activeKeys = Object.keys(customMatrix).filter(k => (customMatrix[k] || 0) > 0);
+      if (activeKeys.length === 0) {
+        alert('Please paint at least one day on the visual heatmap canvas before generating.');
+        return;
+      }
+    }
+
     setCalculating(true);
     try {
       const res = await fetch('/api/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode: activeMode,
           startDate,
           endDate,
           repoOwner: repoOwner || user?.login,
           repoName: selectedRepo,
           branch,
           weekdayCounts,
+          customMatrix,
         }),
       });
 
@@ -230,6 +262,7 @@ export default function DashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          mode: activeMode,
           startDate,
           endDate,
           repoOwner: repoOwner || user?.login,
@@ -237,6 +270,9 @@ export default function DashboardPage() {
           branch,
           pushToRemote,
           weekdayCounts,
+          customMatrix,
+          messageStyle,
+          customMessagePrefix,
         }),
       });
 
@@ -327,213 +363,308 @@ export default function DashboardPage() {
       <main style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {/* Main Scheduler Form Panel */}
         <div className="glass-panel">
+          {/* Header & Mode Switcher */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h2 style={{ fontSize: '1.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Calendar size={22} color="var(--emerald-400)" /> Schedule Contributions
+                <Calendar size={22} color="var(--emerald-400)" /> Contribution Scheduler Studio
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.2rem' }}>
-                Select your target date range, configure commit densities per day, and deploy to your repository.
+                Switch between quick weekday rules or interactive visual pixel canvas painting.
               </p>
             </div>
-            <div className="status-pill">
-              <span className="status-dot"></span> System Ready
+
+            {/* Mode Switcher Tabs */}
+            <div style={{
+              display: 'flex',
+              background: 'rgba(0, 0, 0, 0.4)',
+              padding: '0.3rem',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-color)',
+              gap: '0.25rem'
+            }}>
+              <button
+                type="button"
+                onClick={() => setActiveMode('standard')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.9rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  background: activeMode === 'standard' ? 'var(--emerald-500)' : 'transparent',
+                  color: activeMode === 'standard' ? '#03140c' : 'var(--text-muted)',
+                  fontWeight: activeMode === 'standard' ? 700 : 500,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <Sliders size={15} /> Quick Rules
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMode('canvas')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.45rem 0.9rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  background: activeMode === 'canvas' ? 'var(--emerald-500)' : 'transparent',
+                  color: activeMode === 'canvas' ? '#03140c' : 'var(--text-muted)',
+                  fontWeight: activeMode === 'canvas' ? 700 : 500,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <Palette size={15} /> Visual Canvas (52-Week)
+              </button>
             </div>
           </div>
 
           <form onSubmit={handleCalculateSchedule}>
-            {/* Date Pickers */}
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">Start Date</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">End Date</label>
-                <input
-                  type="date"
-                  className="form-input"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            {/* Quick Range Buttons */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.75rem', marginTop: '-0.5rem' }}>
-              <button type="button" onClick={() => setRangeShortcuts(30)} className="filter-chip">Last 30 Days</button>
-              <button type="button" onClick={() => setRangeShortcuts(90)} className="filter-chip">Last 90 Days</button>
-              <button type="button" onClick={() => setRangeShortcuts(180)} className="filter-chip">Last 6 Months</button>
-              <button type="button" onClick={() => setRangeShortcuts(365)} className="filter-chip">Full Year (365 Days)</button>
-            </div>
-
-            {/* Target Repository */}
-            <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">Repository Owner</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={repoOwner}
-                  onChange={(e) => setRepoOwner(e.target.value)}
-                  placeholder="e.g. your GitHub username"
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Target Repository</label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {loadingRepos ? (
-                    <input type="text" className="form-input" value="Loading repositories..." disabled />
-                  ) : repos.length > 0 ? (
-                    <select
-                      className="form-select"
-                      value={selectedRepo}
-                      onChange={(e) => handleRepoChange(e.target.value)}
-                      required
-                    >
-                      {repos.map((r) => (
-                        <option key={r.name} value={r.name}>
-                          {r.name} {r.private ? '(Private)' : ''}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
+            {/* Mode A: Standard Weekday Rules */}
+            {activeMode === 'standard' && (
+              <>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label className="form-label">Start Date</label>
                     <input
-                      type="text"
+                      type="date"
                       className="form-input"
-                      value={selectedRepo}
-                      onChange={(e) => setSelectedRepo(e.target.value)}
-                      placeholder="e.g. gitcontra"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
                       required
                     />
-                  )}
-                  <button
-                    type="button"
-                    onClick={loadRepositories}
-                    className="btn-ghost"
-                    title="Refresh repositories"
-                    style={{ padding: '0.6rem' }}
-                  >
-                    <RotateCcw size={16} />
-                  </button>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">End Date</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Target Branch */}
-            <div className="form-group" style={{ marginBottom: '1.75rem' }}>
-              <label className="form-label">Target Branch</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={branch}
-                  onChange={(e) => setBranch(e.target.value)}
-                  placeholder="main"
-                  required
-                />
-                <GitBranch size={16} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
-              </div>
-            </div>
+                {/* Quick Range Buttons */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.75rem', marginTop: '-0.5rem' }}>
+                  <button type="button" onClick={() => setRangeShortcuts(30)} className="filter-chip">Last 30 Days</button>
+                  <button type="button" onClick={() => setRangeShortcuts(90)} className="filter-chip">Last 90 Days</button>
+                  <button type="button" onClick={() => setRangeShortcuts(180)} className="filter-chip">Last 6 Months</button>
+                  <button type="button" onClick={() => setRangeShortcuts(365)} className="filter-chip">Full Year (365 Days)</button>
+                </div>
 
-            {/* Weekday Stepper Grid */}
-            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label">Commits Per Weekday</label>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>0 = Skip Day, 1 to 15 = Density</span>
-              </div>
-              <div className="weekday-grid">
-                {WEEKDAYS.map(({ key, label }) => {
-                  const count = weekdayCounts[key] || 0;
-                  return (
-                    <div key={key} className={`weekday-card ${count > 0 ? 'has-commits' : ''}`}>
-                      <span className="weekday-name">{label}</span>
-                      <div className="weekday-stepper">
-                        <button type="button" onClick={() => handleStepCount(key, -1)}>-</button>
-                        <span className="weekday-val">{count}</span>
-                        <button type="button" onClick={() => handleStepCount(key, 1)}>+</button>
-                      </div>
+                {/* Weekday Stepper Grid */}
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label className="form-label">Commits Per Weekday</label>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>0 = Skip Day, 1 to 15 = Density</span>
+                  </div>
+                  <div className="weekday-grid">
+                    {WEEKDAYS.map(({ key, label }) => {
+                      const count = weekdayCounts[key] || 0;
+                      return (
+                        <div key={key} className={`weekday-card ${count > 0 ? 'has-commits' : ''}`}>
+                          <span className="weekday-name">{label}</span>
+                          <div className="weekday-stepper">
+                            <button type="button" onClick={() => handleStepCount(key, -1)}>-</button>
+                            <span className="weekday-val">{count}</span>
+                            <button type="button" onClick={() => handleStepCount(key, 1)}>+</button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Filter Modes */}
+                <div className="filter-row">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Sliders size={16} color="var(--emerald-400)" />
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>PRESETS:</span>
+                    <div className="filter-btn-group">
+                      <button
+                        type="button"
+                        onClick={() => applyPreset('all')}
+                        className={`filter-chip ${activeFilter === 'all' ? 'active' : ''}`}
+                      >
+                        ALL DAYS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyPreset('even')}
+                        className={`filter-chip ${activeFilter === 'even' ? 'active' : ''}`}
+                      >
+                        EVEN DAYS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyPreset('odd')}
+                        className={`filter-chip ${activeFilter === 'odd' ? 'active' : ''}`}
+                      >
+                        ODD DAYS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyPreset('custom')}
+                        className={`filter-chip ${activeFilter === 'custom' ? 'active' : ''}`}
+                      >
+                        RANDOM
+                      </button>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  </div>
 
-            {/* Filter Modes */}
-            <div className="filter-row">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Sliders size={16} color="var(--emerald-400)" />
-                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)' }}>PRESETS:</span>
-                <div className="filter-btn-group">
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('all')}
-                    className={`filter-chip ${activeFilter === 'all' ? 'active' : ''}`}
-                  >
-                    ALL DAYS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('even')}
-                    className={`filter-chip ${activeFilter === 'even' ? 'active' : ''}`}
-                  >
-                    EVEN DAYS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('odd')}
-                    className={`filter-chip ${activeFilter === 'odd' ? 'active' : ''}`}
-                  >
-                    ODD DAYS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('custom')}
-                    className={`filter-chip ${activeFilter === 'custom' ? 'active' : ''}`}
-                  >
-                    RANDOM
-                  </button>
+                  <div className="filter-btn-group">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset(activeFilter, 'min')}
+                      className={`filter-chip ${activeOption === 'min' ? 'active' : ''}`}
+                    >
+                      MIN (1)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset(activeFilter, 'max')}
+                      className={`filter-chip ${activeOption === 'max' ? 'active' : ''}`}
+                    >
+                      MAX (5)
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Mode B: Visual Canvas Studio */}
+            {activeMode === 'canvas' && (
+              <div style={{ marginBottom: '1.75rem' }}>
+                <HeatmapCanvas matrix={customMatrix} onChange={setCustomMatrix} />
+              </div>
+            )}
+
+            {/* Repository & Branch Settings */}
+            <div style={{
+              background: 'rgba(0,0,0,0.25)',
+              border: '1px solid var(--border-color)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1.5rem',
+              marginBottom: '1.5rem'
+            }}>
+              <h3 style={{ fontSize: '1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <GitBranch size={16} color="var(--emerald-400)" /> Target Deployment Repository
+              </h3>
+
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">Repository Owner</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={repoOwner}
+                    onChange={(e) => setRepoOwner(e.target.value)}
+                    placeholder="e.g. your GitHub username"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Target Repository</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {loadingRepos ? (
+                      <input type="text" className="form-input" value="Loading repositories..." disabled />
+                    ) : repos.length > 0 ? (
+                      <select
+                        className="form-select"
+                        value={selectedRepo}
+                        onChange={(e) => handleRepoChange(e.target.value)}
+                        required
+                      >
+                        {repos.map((r) => (
+                          <option key={r.name} value={r.name}>
+                            {r.name} {r.private ? '(Private)' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={selectedRepo}
+                        onChange={(e) => setSelectedRepo(e.target.value)}
+                        placeholder="e.g. gitcontra"
+                        required
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={loadRepositories}
+                      className="btn-ghost"
+                      title="Refresh repositories"
+                      style={{ padding: '0.6rem' }}
+                    >
+                      <RotateCcw size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="filter-btn-group">
-                <button
-                  type="button"
-                  onClick={() => applyPreset(activeFilter, 'min')}
-                  className={`filter-chip ${activeOption === 'min' ? 'active' : ''}`}
-                >
-                  MIN (1)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyPreset(activeFilter, 'max')}
-                  className={`filter-chip ${activeOption === 'max' ? 'active' : ''}`}
-                >
-                  MAX (5)
-                </button>
+              {/* Branch and Push To Remote */}
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label">Target Branch</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={branch}
+                    onChange={(e) => setBranch(e.target.value)}
+                    placeholder="main"
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Commit Message Style</label>
+                  <select
+                    className="form-select"
+                    value={messageStyle}
+                    onChange={(e) => setMessageStyle(e.target.value as CommitMessageStyle)}
+                  >
+                    <option value="conventional">Conventional Commits (feat, fix, refactor...)</option>
+                    <option value="minimal">Minimal (Commit #N — YYYY-MM-DD)</option>
+                    <option value="custom">Custom Prefix</option>
+                  </select>
+                </div>
               </div>
-            </div>
 
-            {/* Push to remote toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-              <input
-                type="checkbox"
-                id="pushRemoteToggle"
-                checked={pushToRemote}
-                onChange={(e) => setPushToRemote(e.target.checked)}
-                style={{ width: '18px', height: '18px', accentColor: 'var(--emerald-500)', cursor: 'pointer' }}
-              />
-              <label htmlFor="pushRemoteToggle" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>
-                <strong>Push to Remote:</strong> Automatically update branch reference on GitHub
-              </label>
+              {messageStyle === 'custom' && (
+                <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                  <label className="form-label">Custom Commit Prefix</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={customMessagePrefix}
+                    onChange={(e) => setCustomMessagePrefix(e.target.value)}
+                    placeholder="e.g. update architecture"
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '1.25rem' }}>
+                <input
+                  type="checkbox"
+                  id="pushRemoteToggle"
+                  checked={pushToRemote}
+                  onChange={(e) => setPushToRemote(e.target.checked)}
+                  style={{ width: '18px', height: '18px', accentColor: 'var(--emerald-500)', cursor: 'pointer' }}
+                />
+                <label htmlFor="pushRemoteToggle" style={{ fontSize: '0.9rem', cursor: 'pointer', userSelect: 'none' }}>
+                  <strong>Push to Remote:</strong> Update branch ref directly on GitHub so commits render on profile
+                </label>
+              </div>
             </div>
 
             {/* Submit button */}
@@ -541,7 +672,7 @@ export default function DashboardPage() {
               type="submit"
               className="btn-primary"
               disabled={calculating}
-              style={{ width: '100%', padding: '0.9rem', fontSize: '1.05rem' }}
+              style={{ width: '100%', padding: '0.95rem', fontSize: '1.05rem' }}
             >
               {calculating ? (
                 <>
@@ -549,7 +680,7 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <>
-                  <Play size={18} /> Review & Generate Schedule
+                  <Play size={18} /> Review & Generate Commits
                 </>
               )}
             </button>
@@ -563,7 +694,7 @@ export default function DashboardPage() {
               <Sparkles size={16} color="var(--emerald-400)" /> Support ContraGit
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-              Open-source developer tool. Star the repo or follow on GitHub to stay tuned for upcoming visual heatmap painter!
+              Open-source developer tool. Star the repo or follow on GitHub to show your appreciation!
             </p>
             {socialMessage && (
               <p style={{ fontSize: '0.8rem', color: 'var(--emerald-400)', marginTop: '0.4rem' }}>
@@ -601,6 +732,12 @@ export default function DashboardPage() {
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem', background: 'rgba(0,0,0,0.3)', padding: '1.25rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', fontSize: '0.9rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-dim)' }}>Mode:</span>
+                <span className="mono" style={{ color: 'var(--emerald-400)' }}>
+                  {activeMode === 'canvas' ? '🎨 Visual Canvas Studio' : '⚡ Quick Rules'}
+                </span>
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-dim)' }}>Target Repository:</span>
                 <span className="mono" style={{ color: 'var(--emerald-400)' }}>{calculation.repository} ({branch})</span>
