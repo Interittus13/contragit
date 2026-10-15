@@ -36,6 +36,9 @@ jobs:
       - name: Run TypeScript Check
         run: npm run typecheck
 
+      - name: Run Unit Tests
+        run: npm test
+
       - name: Run Next.js Production Build
         run: npm run build
         env:
