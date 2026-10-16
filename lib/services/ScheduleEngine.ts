@@ -79,10 +79,12 @@ export class ScheduleEngine {
 
   public calculate(config: ScheduleConfig): ScheduleCalculation {
     const repoLabel = `${config.repoOwner || 'user'}/${config.repoName || 'repository'}`;
+    const lockedSet = new Set(config.lockedDates || []);
+    const shouldProtect = config.protectExisting !== false && lockedSet.size > 0;
 
     // 1. Matrix / Canvas Mode
     if (config.mode === 'canvas' && config.customMatrix) {
-      return this.calculateFromMatrix(config.customMatrix, repoLabel);
+      return this.calculateFromMatrix(config.customMatrix, repoLabel, lockedSet, shouldProtect);
     }
 
     // 2. Standard Weekday Mode
@@ -96,6 +98,7 @@ export class ScheduleEngine {
 
     let totalCommits = 0;
     let eligibleDays = 0;
+    let protectedDays = 0;
     const dailyBreakdown: WeekdayCounts = {
       monday: 0,
       tuesday: 0,
@@ -108,6 +111,13 @@ export class ScheduleEngine {
 
     const cur = new Date(startDate);
     while (cur <= endDate) {
+      const dateStr = cur.toISOString().split('T')[0];
+      if (shouldProtect && lockedSet.has(dateStr)) {
+        protectedDays++;
+        cur.setDate(cur.getDate() + 1);
+        continue;
+      }
+
       const dayName = ScheduleEngine.INDEX_TO_WEEKDAY[cur.getDay()];
       const dayCount = Math.max(0, counts[dayName] || 0);
 
@@ -129,15 +139,23 @@ export class ScheduleEngine {
       totalCommits,
       dailyBreakdown,
       estimatedSeconds,
+      protectedDays,
     };
   }
 
-  public calculateFromMatrix(matrix: CustomCommitMatrix, repoLabel: string): ScheduleCalculation {
-    const dates = Object.keys(matrix)
+  public calculateFromMatrix(
+    matrix: CustomCommitMatrix, 
+    repoLabel: string,
+    lockedSet: Set<string> = new Set(),
+    shouldProtect: boolean = false
+  ): ScheduleCalculation {
+    const rawDates = Object.keys(matrix)
       .filter(dateStr => (matrix[dateStr] || 0) > 0)
       .sort();
 
     let totalCommits = 0;
+    let protectedDays = 0;
+    const activeDates: string[] = [];
     const dailyBreakdown: WeekdayCounts = {
       monday: 0,
       tuesday: 0,
@@ -148,7 +166,12 @@ export class ScheduleEngine {
       sunday: 0,
     };
 
-    dates.forEach(dStr => {
+    rawDates.forEach(dStr => {
+      if (shouldProtect && lockedSet.has(dStr)) {
+        protectedDays++;
+        return;
+      }
+      activeDates.push(dStr);
       const count = matrix[dStr];
       const d = new Date(dStr + 'T12:00:00Z');
       const dayName = ScheduleEngine.INDEX_TO_WEEKDAY[d.getUTCDay()];
@@ -156,21 +179,25 @@ export class ScheduleEngine {
       totalCommits += count;
     });
 
-    const dateRange = dates.length > 0
-      ? `${new Date(dates[0]).toDateString()} to ${new Date(dates[dates.length - 1]).toDateString()}`
+    const dateRange = activeDates.length > 0
+      ? `${new Date(activeDates[0]).toDateString()} to ${new Date(activeDates[activeDates.length - 1]).toDateString()}`
       : 'Empty canvas';
 
     return {
       repository: repoLabel,
       dateRange,
-      eligibleDays: dates.length,
+      eligibleDays: activeDates.length,
       totalCommits,
       dailyBreakdown,
       estimatedSeconds: Math.max(3, Math.round(totalCommits * 1.5)),
+      protectedDays,
     };
   }
 
   public generateCommitTimestamps(config: ScheduleConfig): Date[] {
+    const lockedSet = new Set(config.lockedDates || []);
+    const shouldProtect = config.protectExisting !== false && lockedSet.size > 0;
+
     // 1. Matrix / Canvas Mode
     if (config.mode === 'canvas' && config.customMatrix) {
       const timestamps: Date[] = [];
@@ -179,6 +206,10 @@ export class ScheduleEngine {
         .sort();
 
       dates.forEach(dStr => {
+        if (shouldProtect && lockedSet.has(dStr)) {
+          return; // Skip protected date with existing commits
+        }
+
         const count = config.customMatrix![dStr];
         for (let i = 0; i < count; i++) {
           const commitDate = new Date(dStr + 'T00:00:00');
@@ -206,6 +237,12 @@ export class ScheduleEngine {
     const cur = new Date(startDate);
 
     while (cur <= endDate) {
+      const dateStr = cur.toISOString().split('T')[0];
+      if (shouldProtect && lockedSet.has(dateStr)) {
+        cur.setDate(cur.getDate() + 1);
+        continue; // Skip protected date
+      }
+
       const dayName = ScheduleEngine.INDEX_TO_WEEKDAY[cur.getDay()];
       const dayCount = Math.max(0, counts[dayName] || 0);
 
