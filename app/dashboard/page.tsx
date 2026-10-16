@@ -135,11 +135,13 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/repos');
       const data = await res.json();
-      if (data.success && Array.isArray(data.repositories)) {
-        setRepositories(data.repositories);
-        if (data.repositories.length > 0 && !selectedRepo) {
-          setSelectedRepo(data.repositories[0].name);
-          setBranch(data.repositories[0].defaultBranch || 'main');
+      const list = data.repositories || data.repos;
+      if (data.success && Array.isArray(list) && list.length > 0) {
+        setRepositories(list);
+        if (!selectedRepo) {
+          setSelectedRepo(list[0].name);
+          setBranch(list[0].defaultBranch || 'main');
+          if (list[0].owner) setRepoOwner(list[0].owner);
         }
       }
     } catch {
@@ -147,6 +149,15 @@ export default function DashboardPage() {
       if (!selectedRepo) setSelectedRepo('gitcontra');
     } finally {
       setLoadingRepos(false);
+    }
+  };
+
+  const handleSelectRepo = (repoName: string) => {
+    setSelectedRepo(repoName);
+    const found = repositories.find((r) => r.name === repoName);
+    if (found) {
+      if (found.defaultBranch) setBranch(found.defaultBranch);
+      if (found.owner) setRepoOwner(found.owner);
     }
   };
 
@@ -476,10 +487,25 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Studio 2-Column Split Workspace */}
+        {/* Main Studio Stack */}
         <div className="studio-deck">
-          {/* Primary Column: Canvas Studio / Drafting Board */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: 0 }}>
+          {/* STEP 1: Top Context Panel — Target Repository Setup */}
+          <TargetRepoCard
+            repoOwner={repoOwner}
+            onRepoOwnerChange={setRepoOwner}
+            selectedRepo={selectedRepo}
+            onSelectedRepoChange={handleSelectRepo}
+            branch={branch}
+            onBranchChange={setBranch}
+            pushToRemote={pushToRemote}
+            onPushToRemoteChange={setPushToRemote}
+            repositories={repositories}
+            loadingRepos={loadingRepos}
+            onRefreshRepos={loadRepositories}
+          />
+
+          {/* STEP 2: Full-Width Centerpiece — The Contribution Canvas / Quick Rules */}
+          <div style={{ width: '100%', minWidth: 0 }}>
             {activeMode === 'canvas' ? (
               <section aria-label="Visual Canvas Studio">
                 <HeatmapCanvas
@@ -502,78 +528,74 @@ export default function DashboardPage() {
                 />
               </section>
             )}
-
-            {/* Voluntary Support / Social Feedback */}
-            <div
-              className="cluster-between"
-              style={{
-                padding: '1rem 1.25rem',
-                background: 'rgba(10, 14, 23, 0.5)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-lg)',
-                fontSize: '0.85rem',
-              }}
-            >
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>ContraGit is open-source. Enjoying the tool? </span>
-                {socialMessage && (
-                  <span className="mono" style={{ color: 'var(--emerald-400)', marginLeft: '0.5rem', fontWeight: 600 }}>
-                    {socialMessage}
-                  </span>
-                )}
-              </div>
-
-              <div className="cluster" style={{ gap: '0.5rem' }}>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => triggerSocialAction('star')}
-                  disabled={socialLoading === 'star'}
-                  icon={<Star size={14} color="#f59e0b" fill="#f59e0b" />}
-                >
-                  Star Project
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => triggerSocialAction('follow')}
-                  disabled={socialLoading === 'follow'}
-                  icon={<UserPlus size={14} />}
-                >
-                  Follow Author
-                </Button>
-              </div>
-            </div>
           </div>
 
-          {/* Secondary Column: Inspector Command Deck */}
-          <aside className="studio-inspector">
-            {/* Deploy Command HUD */}
+          {/* STEP 3: Configuration & Deploy Center (Balanced 2-Column Responsive Grid) */}
+          <div className="studio-config-grid">
+            {/* Left Column: Commit Message Styling */}
+            <CommitStyleCard
+              messageStyle={messageStyle}
+              onMessageStyleChange={setMessageStyle}
+              customPrefix={customMessagePrefix}
+              onCustomPrefixChange={setCustomMessagePrefix}
+            />
+
+            {/* Right Column: Deployment HUD & Action Center */}
             <div
               className="glass-panel"
               style={{
-                padding: '1.35rem',
+                padding: '1.5rem',
                 border: '1px solid var(--border-active)',
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 100%)',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.04) 100%)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
-                <div>
-                  <span style={{ fontSize: '0.725rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    Authoring Queue
-                  </span>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1.1, marginTop: '0.2rem' }}>
-                    {effectiveTotal} <span style={{ fontSize: '0.9rem', color: 'var(--emerald-400)', fontWeight: 600 }}>commits</span>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
+                  <div>
+                    <span style={{ fontSize: '0.725rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Authoring Queue
+                    </span>
+                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1.1, marginTop: '0.2rem' }}>
+                      {effectiveTotal} <span style={{ fontSize: '1rem', color: 'var(--emerald-400)', fontWeight: 600 }}>commits</span>
+                    </div>
+                  </div>
+                  <Badge variant="emerald" icon={<Sparkles size={12} />}>
+                    Ready to Push
+                  </Badge>
+                </div>
+
+                <div
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.35)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.85rem 1rem',
+                    marginBottom: '1.5rem',
+                    fontSize: '0.825rem',
+                    lineHeight: 1.6,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Target Repository:</span>
+                    <code className="mono" style={{ color: 'var(--emerald-400)' }}>{repoOwner}/{selectedRepo || 'repo'}</code>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Target Branch:</span>
+                    <code className="mono" style={{ color: 'var(--cyan-400)' }}>{branch}</code>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Active Days:</span>
+                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{effectiveDays} days</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Safety:</span>
+                    <span style={{ color: 'var(--emerald-400)', fontWeight: 500 }}>Stateless 5-commit chunks</span>
                   </div>
                 </div>
-                <Badge variant="emerald" icon={<Sparkles size={12} />}>
-                  Live Deck
-                </Badge>
               </div>
-
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: 1.45 }}>
-                Deploying to <code className="mono" style={{ color: 'var(--emerald-400)' }}>{selectedRepo || 'repo'}:{branch}</code> across {effectiveDays} active calendar days.
-              </p>
 
               <Button
                 variant="primary"
@@ -582,35 +604,54 @@ export default function DashboardPage() {
                 disabled={calculating || startingJob || (activeMode === 'canvas' && totalCommitsInCanvas === 0)}
                 loading={calculating}
                 iconRight={<Play size={16} fill="currentColor" />}
-                style={{ width: '100%', minHeight: '48px' }}
+                style={{ width: '100%', minHeight: '50px', fontSize: '1.05rem' }}
               >
                 Deploy Schedule
               </Button>
             </div>
+          </div>
 
-            {/* Target Repo Settings */}
-            <TargetRepoCard
-              repoOwner={repoOwner}
-              onRepoOwnerChange={setRepoOwner}
-              selectedRepo={selectedRepo}
-              onSelectedRepoChange={setSelectedRepo}
-              branch={branch}
-              onBranchChange={setBranch}
-              pushToRemote={pushToRemote}
-              onPushToRemoteChange={setPushToRemote}
-              repositories={repositories}
-              loadingRepos={loadingRepos}
-              onRefreshRepos={loadRepositories}
-            />
+          {/* Voluntary Support / Social Feedback */}
+          <div
+            className="cluster-between"
+            style={{
+              padding: '1rem 1.25rem',
+              background: 'rgba(10, 14, 23, 0.5)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-lg)',
+              fontSize: '0.85rem',
+            }}
+          >
+            <div>
+              <span style={{ color: 'var(--text-muted)' }}>ContraGit is open-source. Enjoying the tool? </span>
+              {socialMessage && (
+                <span className="mono" style={{ color: 'var(--emerald-400)', marginLeft: '0.5rem', fontWeight: 600 }}>
+                  {socialMessage}
+                </span>
+              )}
+            </div>
 
-            {/* Commit Message Styling */}
-            <CommitStyleCard
-              messageStyle={messageStyle}
-              onMessageStyleChange={setMessageStyle}
-              customPrefix={customMessagePrefix}
-              onCustomPrefixChange={setCustomMessagePrefix}
-            />
-          </aside>
+            <div className="cluster" style={{ gap: '0.5rem' }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => triggerSocialAction('star')}
+                disabled={socialLoading === 'star'}
+                icon={<Star size={14} color="#f59e0b" fill="#f59e0b" />}
+              >
+                Star Project
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => triggerSocialAction('follow')}
+                disabled={socialLoading === 'follow'}
+                icon={<UserPlus size={14} />}
+              >
+                Follow Author
+              </Button>
+            </div>
+          </div>
         </div>
       </main>
 

@@ -142,7 +142,11 @@ export class GitHubApiClient {
   }
 
   public async listUserRepositories(accessToken: string): Promise<GitHubRepository[]> {
-    const repos = await this.request<Array<any>>('/user/repos?per_page=100&sort=updated', {}, accessToken);
+    const repos = await this.request<Array<any>>(
+      '/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
+      {},
+      accessToken
+    );
     if (!Array.isArray(repos)) return [];
 
     return repos.map(repo => ({

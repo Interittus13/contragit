@@ -81,7 +81,8 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html,
+body {
   min-height: 100vh;
   min-height: 100dvh;
   background-color: var(--bg-canvas);
@@ -95,8 +96,13 @@ html, body {
 }
 
 /* Touch Latency Optimization */
-button, input, select, a, [role="button"] {
-  touch-action: manipulation; /* Kills 300ms tap latency */
+button,
+input,
+select,
+a,
+[role="button"] {
+  touch-action: manipulation;
+  /* Kills 300ms tap latency */
 }
 
 /* Scrollbar Styling */
@@ -135,7 +141,7 @@ button, input, select, a, [role="button"] {
 .ambient-grid {
   position: fixed;
   inset: 0;
-  background-image: 
+  background-image:
     linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 32px 32px;
@@ -167,8 +173,10 @@ button, input, select, a, [role="button"] {
 h1 {
   font-family: var(--font-sans);
   font-weight: 800;
-  letter-spacing: -0.035em; /* Negative tracking for large text */
-  line-height: 1.08; /* Inversely tight leading */
+  letter-spacing: -0.035em;
+  /* Negative tracking for large text */
+  line-height: 1.08;
+  /* Inversely tight leading */
   color: var(--text-primary);
 }
 
@@ -188,7 +196,8 @@ h3 {
   color: var(--text-primary);
 }
 
-h4, h5 {
+h4,
+h5 {
   font-family: var(--font-sans);
   font-weight: 600;
   letter-spacing: -0.015em;
@@ -219,7 +228,8 @@ p {
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--border-default);
-  border-top: 1px solid var(--specular-rim); /* Specular rim catch */
+  border-top: 1px solid var(--specular-rim);
+  /* Specular rim catch */
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   transition: all 0.25s var(--spring-ease);
@@ -440,23 +450,24 @@ p {
   gap: 1rem;
 }
 
-/* =========================================================================
-   Apple Pro Studio Architecture
-   ========================================================================= */
-
 /* Studio 2-Column Split Deck */
 .studio-deck {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.75rem;
+  width: 100%;
 }
 
-@media (min-width: 1024px) {
-  .studio-deck {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 370px;
-    align-items: start;
-    gap: 1.5rem;
+.studio-config-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+@media (min-width: 900px) {
+  .studio-config-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -464,8 +475,6 @@ p {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  position: sticky;
-  top: 1.5rem;
 }
 
 /* Apple Inset Grouped Section */
@@ -545,11 +554,11 @@ p {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-.ios-switch input:checked + .ios-switch-slider {
+.ios-switch input:checked+.ios-switch-slider {
   background-color: var(--emerald-500);
 }
 
-.ios-switch input:checked + .ios-switch-slider:before {
+.ios-switch input:checked+.ios-switch-slider:before {
   transform: translateX(20px);
 }
 
@@ -632,7 +641,8 @@ p {
 .btn-md {
   padding: 0.65rem 1.25rem;
   font-size: 0.9rem;
-  min-height: 44px; /* Apple minimum touch target */
+  min-height: 44px;
+  /* Apple minimum touch target */
 }
 
 .btn-lg {
@@ -707,7 +717,8 @@ p {
   border-radius: var(--radius-full);
   font-size: 0.725rem;
   font-weight: 700;
-  letter-spacing: 0.035em; /* Positive tracking for small text */
+  letter-spacing: 0.035em;
+  /* Positive tracking for small text */
   font-family: var(--font-mono);
   line-height: 1.2;
 }
@@ -749,7 +760,8 @@ p {
   justify-content: space-between;
   font-size: 0.725rem;
   font-weight: 700;
-  letter-spacing: 0.05em; /* Positive tracking for small caps */
+  letter-spacing: 0.05em;
+  /* Positive tracking for small caps */
   color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 0.4rem;
@@ -767,7 +779,8 @@ p {
   font-family: var(--font-sans);
   transition: all 0.18s var(--spring-ease);
   outline: none;
-  min-height: 44px; /* Apple touch accessibility guideline */
+  min-height: 44px;
+  /* Apple touch accessibility guideline */
 }
 
 .form-control:focus {
@@ -796,7 +809,8 @@ p {
   backdrop-filter: blur(32px) saturate(190%);
   -webkit-backdrop-filter: blur(32px) saturate(190%);
   border: 1px solid var(--border-strong);
-  border-top: 1px solid rgba(255, 255, 255, 0.3); /* Specular top edge */
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  /* Specular top edge */
   border-radius: var(--radius-xl);
   max-width: 560px;
   width: 100%;
@@ -815,13 +829,25 @@ p {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalSpring {
-  from { opacity: 0; transform: translateY(14px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Progress bar */
@@ -868,9 +894,20 @@ p {
 }
 
 @keyframes pulse {
-  0% { transform: scale(0.95); opacity: 0.8; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0.95); opacity: 0.8; }
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
 }
 
 /* Header & Navigation */
@@ -906,6 +943,7 @@ p {
   .desktop-nav {
     display: flex !important;
   }
+
   .mobile-menu-toggle {
     display: none !important;
   }
@@ -987,7 +1025,10 @@ p {
 
 /* 1. Prefers Reduced Motion: Cross-fades, no forced spring jumps */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -1010,6 +1051,7 @@ p {
 
 /* 2. Prefers Reduced Transparency: Solid functional surfaces without blur */
 @media (prefers-reduced-transparency: reduce) {
+
   .glass-panel,
   .glass-panel-elevated,
   .modal-card,

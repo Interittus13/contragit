@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const repos = await gitHubApiClient.listUserRepositories(user.accessToken);
-    return NextResponse.json({ success: true, repos });
+    return NextResponse.json({ success: true, repos, repositories: repos });
   } catch (error: any) {
     return NextResponse.json(
       { success: false, message: error.message || 'Failed to fetch repositories' },
