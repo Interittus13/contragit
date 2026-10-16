@@ -95,7 +95,7 @@ export function QuickRulesCard({
             aria-label="Filter presets"
             className="segmented-control"
           >
-            {(['all', 'even', 'odd', 'custom'] as const).map((p) => {
+            {(['all', 'even', 'odd', 'random', 'custom'] as const).map((p) => {
               const isSelected = activeFilter === p;
               return (
                 <button

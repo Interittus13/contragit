@@ -39,6 +39,20 @@ describe('ScheduleEngine', () => {
       expect(counts.monday).toBe(0);
       expect(counts.wednesday).toBe(0);
     });
+
+    it('returns randomized counts within ceiling for preset "random"', () => {
+      const countsMax = engine.getFilterPresetCounts('random', 'max');
+      Object.values(countsMax).forEach(val => {
+        expect(val).toBeGreaterThanOrEqual(0);
+        expect(val).toBeLessThanOrEqual(10);
+      });
+
+      const countsMin = engine.getFilterPresetCounts('random', 'min');
+      Object.values(countsMin).forEach(val => {
+        expect(val).toBeGreaterThanOrEqual(0);
+        expect(val).toBeLessThanOrEqual(5);
+      });
+    });
   });
 
   describe('calculate', () => {

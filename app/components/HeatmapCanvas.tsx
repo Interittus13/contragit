@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { CustomCommitMatrix } from '@/lib/types/scheduler';
 import { renderTextToPixelMatrix, STENCILS } from '@/lib/utils/pixelFont';
 import { 
@@ -9,7 +9,6 @@ import {
   Type, 
   Shuffle, 
   Check, 
-  ZoomIn, 
   Hand, 
   X 
 } from 'lucide-react';
@@ -44,8 +43,24 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
   const [selectedBrush, setSelectedBrush] = useState<number>(3); // default Level 3
   const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
   const [touchMode, setTouchMode] = useState<'draw' | 'pan'>('draw');
-  const [zoomLevel, setZoomLevel] = useState<'normal' | 'large'>('normal');
   const [hoveredCell, setHoveredCell] = useState<{ date: string; day: string; count: number; level: number } | null>(null);
+
+  // Responsive full-width container tracking
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(1150);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+    updateSize();
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   // Stencil / Text modal state
   const [showStencilModal, setShowStencilModal] = useState<boolean>(false);
@@ -204,9 +219,23 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
     return labels;
   }, [calendarGrid]);
 
-  const cellSize = zoomLevel === 'large' ? 15 : 11;
-  const cellGap = zoomLevel === 'large' ? 4 : 3;
-  const colStep = cellSize + cellGap;
+  // Dynamic responsive dimensions to cover 100% full width to the right
+  const { cellSize, cellGap, colStep, gridContentWidth } = useMemo(() => {
+    const panelPadding = 40; // 1.25rem on each side
+    const labelColWidth = 32;
+    const available = Math.max(740, containerWidth - panelPadding);
+    const availableForCols = available - labelColWidth;
+    const step = availableForCols / 52;
+    const gap = Math.max(2.5, Math.min(4.5, step * 0.16));
+    const size = Math.max(10, step - gap);
+
+    return {
+      cellSize: size,
+      cellGap: gap,
+      colStep: step,
+      gridContentWidth: available,
+    };
+  }, [containerWidth]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -285,19 +314,6 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             <span>{touchMode === 'draw' ? 'Draw Mode' : 'Pan Mode'}</span>
           </button>
 
-          {/* Zoom Toggle */}
-          <button
-            type="button"
-            onClick={() => setZoomLevel(zoomLevel === 'normal' ? 'large' : 'normal')}
-            className="btn btn-ghost btn-sm"
-            style={{ fontSize: '0.75rem', padding: '0.4rem 0.65rem' }}
-            title="Toggle grid scale for easier touch tapping"
-            aria-label={`Toggle zoom scale, current: ${zoomLevel}`}
-          >
-            <ZoomIn size={13} />
-            <span>{zoomLevel === 'large' ? '1.5x' : '1x'}</span>
-          </button>
-
           {/* Stencil */}
           <Button
             variant="primary"
@@ -346,8 +362,9 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
         </div>
       </div>
 
-      {/* Main Grid Viewport with Dynamic Touch Actions */}
+      {/* Main Grid Viewport with Dynamic Responsive Full Width */}
       <div
+        ref={containerRef}
         className="glass-panel"
         style={{
           padding: '1.25rem',
@@ -355,9 +372,10 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
           WebkitOverflowScrolling: 'touch',
           userSelect: 'none',
           touchAction: touchMode === 'draw' ? 'none' : 'pan-x pan-y',
+          width: '100%',
         }}
       >
-        <div style={{ minWidth: `${52 * colStep + 48}px` }}>
+        <div style={{ minWidth: `${gridContentWidth}px`, width: '100%' }}>
           {/* Months Header Bar */}
           <div
             style={{
@@ -368,6 +386,7 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
               color: 'var(--text-muted)',
               height: '18px',
               position: 'relative',
+              width: '100%',
             }}
           >
             {monthLabels.map(m => (
@@ -386,20 +405,21 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             ))}
           </div>
 
-          {/* Grid Rows */}
-          <div style={{ display: 'flex', gap: `${cellGap}px` }}>
+          {/* Grid Rows: Weekday Legend + 52 Columns spanning full width to the right */}
+          <div style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
             {/* Weekday Legend */}
             <div
               style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: `${cellGap}px`,
-                width: '28px',
+                width: '32px',
                 fontSize: '0.65rem',
                 color: 'var(--text-disabled)',
                 textAlign: 'right',
                 paddingRight: '6px',
                 fontFamily: 'var(--font-mono)',
+                flexShrink: 0,
               }}
             >
               <div style={{ height: `${cellSize}px`, lineHeight: `${cellSize}px` }} />
@@ -411,69 +431,80 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
               <div style={{ height: `${cellSize}px`, lineHeight: `${cellSize}px` }} />
             </div>
 
-            {/* 52 Columns */}
-            {calendarGrid.map((week, weekIdx) => (
-              <div
-                key={weekIdx}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: `${cellGap}px`,
-                }}
-              >
-                {week.map((cell) => {
-                  const count = matrix[cell.dateStr] || 0;
-                  let level = 0;
-                  if (count >= 10) level = 4;
-                  else if (count >= 6) level = 3;
-                  else if (count >= 3) level = 2;
-                  else if (count > 0) level = 1;
+            {/* 52 Columns stretched fully to right edge */}
+            <div
+              style={{
+                display: 'flex',
+                flex: 1,
+                justifyContent: 'space-between',
+                gap: `${cellGap}px`,
+              }}
+            >
+              {calendarGrid.map((week, weekIdx) => (
+                <div
+                  key={weekIdx}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: `${cellGap}px`,
+                    flex: 1,
+                    maxWidth: `${cellSize}px`,
+                  }}
+                >
+                  {week.map((cell) => {
+                    const count = matrix[cell.dateStr] || 0;
+                    let level = 0;
+                    if (count >= 10) level = 4;
+                    else if (count >= 6) level = 3;
+                    else if (count >= 3) level = 2;
+                    else if (count > 0) level = 1;
 
-                  return (
-                    <div
-                      key={cell.dateStr}
-                      data-date={cell.dateStr}
-                      role="button"
-                      tabIndex={-1}
-                      aria-label={`${cell.dateStr}: ${count} commits`}
-                      onPointerDown={() => {
-                        handleCellPointerDown(cell.dateStr);
-                        setHoveredCell({
-                          date: cell.dateStr,
-                          day: DAY_LABELS[cell.dayIndex],
-                          count: LEVEL_COMMITS[selectedBrush] ?? count,
-                          level: selectedBrush,
-                        });
-                      }}
-                      onPointerEnter={() => {
-                        handleCellPointerEnter(cell.dateStr);
-                        setHoveredCell({
-                          date: cell.dateStr,
-                          day: DAY_LABELS[cell.dayIndex],
-                          count,
-                          level,
-                        });
-                      }}
-                      onPointerLeave={() => {
-                        if (!isMouseDown) {
-                          setHoveredCell(null);
-                        }
-                      }}
-                      style={{
-                        width: `${cellSize}px`,
-                        height: `${cellSize}px`,
-                        borderRadius: '2.5px',
-                        backgroundColor: LEVEL_COLORS[level],
-                        border: level > 0 ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.04)',
-                        cursor: touchMode === 'draw' ? 'crosshair' : 'default',
-                        transition: 'transform 0.08s var(--spring-ease), background-color 0.12s ease',
-                        touchAction: touchMode === 'draw' ? 'none' : 'auto',
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            ))}
+                    return (
+                      <div
+                        key={cell.dateStr}
+                        data-date={cell.dateStr}
+                        role="button"
+                        tabIndex={-1}
+                        aria-label={`${cell.dateStr}: ${count} commits`}
+                        onPointerDown={() => {
+                          handleCellPointerDown(cell.dateStr);
+                          setHoveredCell({
+                            date: cell.dateStr,
+                            day: DAY_LABELS[cell.dayIndex],
+                            count: LEVEL_COMMITS[selectedBrush] ?? count,
+                            level: selectedBrush,
+                          });
+                        }}
+                        onPointerEnter={() => {
+                          handleCellPointerEnter(cell.dateStr);
+                          setHoveredCell({
+                            date: cell.dateStr,
+                            day: DAY_LABELS[cell.dayIndex],
+                            count,
+                            level,
+                          });
+                        }}
+                        onPointerLeave={() => {
+                          if (!isMouseDown) {
+                            setHoveredCell(null);
+                          }
+                        }}
+                        style={{
+                          width: `${cellSize}px`,
+                          height: `${cellSize}px`,
+                          borderRadius: '2.5px',
+                          backgroundColor: LEVEL_COLORS[level],
+                          border: level > 0 ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.04)',
+                          cursor: touchMode === 'draw' ? 'crosshair' : 'default',
+                          transition: 'transform 0.08s var(--spring-ease), background-color 0.12s ease',
+                          touchAction: touchMode === 'draw' ? 'none' : 'auto',
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
