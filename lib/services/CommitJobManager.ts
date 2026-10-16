@@ -6,12 +6,10 @@ import {
   CommitBatchResponse 
 } from '../types/scheduler';
 import { GitHubApiClient } from './GitHubApiClient';
-import { ScheduleEngine } from './ScheduleEngine';
 import { languageMasqueradeEngine } from './LanguageMasqueradeEngine';
 
 export class CommitJobManager {
   private jobs: Map<string, CommitJob> = new Map();
-  private readonly scheduleEngine: ScheduleEngine;
 
   private static readonly SAMPLE_MESSAGES = [
     'feat: implement core workflow updates',
@@ -24,10 +22,6 @@ export class CommitJobManager {
     'test: add regression test cases',
     'ci: optimize deployment workflow pipeline',
   ];
-
-  constructor(scheduleEngine: ScheduleEngine = new ScheduleEngine()) {
-    this.scheduleEngine = scheduleEngine;
-  }
 
   public createJob(user: GitHubUser, config: ScheduleConfig, totalCommits: number): CommitJob {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;

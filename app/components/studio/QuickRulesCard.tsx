@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Calendar, Minus, Plus } from 'lucide-react';
 import { Card } from '@/app/components/ui/Card';
 import { Badge } from '@/app/components/ui/Badge';

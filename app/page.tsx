@@ -1,33 +1,19 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   ArrowRight, 
-  Calendar, 
-  Check, 
-  CheckCircle2, 
-  Code2, 
   Cpu, 
-  ExternalLink, 
-  Flame, 
-  GitBranch, 
   GitCommit, 
-  Layers, 
   Lock, 
   Palette, 
-  Play, 
-  RefreshCw, 
-  Shield, 
-  ShieldCheck, 
   Smartphone, 
   Sparkles, 
-  Terminal, 
   Type, 
   Zap 
 } from 'lucide-react';
 import { AppHeader } from '@/app/components/layout/AppHeader';
-import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
 import { Card } from '@/app/components/ui/Card';
 import { GitHubUser } from '@/lib/types/github';
@@ -43,16 +29,14 @@ const LEVEL_COLORS: Record<number, string> = {
 
 export default function HomePage() {
   const [user, setUser] = useState<GitHubUser | null>(null);
-  const [mounted, setMounted] = useState(false);
 
   // Hero interactive typing studio
   const [stampInput, setStampInput] = useState<string>('HIRE ME');
-  const [selectedBrush, setSelectedBrush] = useState<number>(3);
+  const selectedBrush = 3;
   const [activePreset, setActivePreset] = useState<'HIRE ME' | 'SHIP IT' | 'CONTRA' | 'HEART' | 'INVADER' | 'ORGANIC' | 'CUSTOM'>('HIRE ME');
   const [customTiles, setCustomTiles] = useState<Record<number, number>>({});
 
   useEffect(() => {
-    setMounted(true);
     fetch('/api/auth/status')
       .then((res) => res.json())
       .then((data) => {

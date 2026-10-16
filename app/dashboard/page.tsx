@@ -1,21 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Compass,
-  GitCommit,
   Palette,
-  Play,
-  Sparkles,
   Sliders,
   Star,
   UserPlus
 } from 'lucide-react';
 
 import {
-  Weekday,
   WeekdayCounts,
   FilterPreset,
   FilterOption,
@@ -32,8 +26,6 @@ import { AppHeader } from '@/app/components/layout/AppHeader';
 import { MobileBottomBar } from '@/app/components/layout/MobileBottomBar';
 import { Tabs } from '@/app/components/ui/Tabs';
 import { Button } from '@/app/components/ui/Button';
-import { Badge } from '@/app/components/ui/Badge';
-import { Card } from '@/app/components/ui/Card';
 
 import { HeatmapCanvas } from '@/app/components/HeatmapCanvas';
 import { TargetLanguageConfig } from '@/lib/types/language';
@@ -41,7 +33,8 @@ import { LanguageSelectorCard } from '@/app/components/studio/LanguageSelectorCa
 import { TargetRepoCard } from '@/app/components/studio/TargetRepoCard';
 import { CommitStyleCard } from '@/app/components/studio/CommitStyleCard';
 import { QuickRulesCard } from '@/app/components/studio/QuickRulesCard';
-import { BatchProgressModal } from '@/app/components/studio/BatchProgressModal';
+import { DeploymentControlHub, DeploymentStage } from '@/app/components/studio/DeploymentControlHub';
+import { AmbientDeployIsland } from '@/app/components/studio/AmbientDeployIsland';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -95,20 +88,18 @@ export default function DashboardPage() {
   const [activeFilter, setActiveFilter] = useState<FilterPreset>('all');
   const [activeOption, setActiveOption] = useState<FilterOption>('max');
 
-  // Pre-flight calculation & summary modal
+  // Pre-flight calculation & deployment lifecycle state machine
   const [calculating, setCalculating] = useState<boolean>(false);
   const [calculation, setCalculation] = useState<ScheduleCalculation | null>(null);
-  const [showSummaryModal, setShowSummaryModal] = useState<boolean>(false);
+  const [deploymentStage, setDeploymentStage] = useState<DeploymentStage>('idle');
 
   // Execution State & Batch Pipeline
   const [activeJob, setActiveJob] = useState<CommitJob | null>(null);
-  const [showProgressModal, setShowProgressModal] = useState<boolean>(false);
   const [startingJob, setStartingJob] = useState<boolean>(false);
 
   // Original GitHub contributions & protection
   const [existingContributions, setExistingContributions] = useState<Record<string, number>>({});
   const [protectExisting, setProtectExisting] = useState<boolean>(true);
-  const [loadingContributions, setLoadingContributions] = useState<boolean>(false);
 
   const isPausedRef = useRef<boolean>(false);
   const cancelRef = useRef<boolean>(false);
@@ -167,7 +158,6 @@ export default function DashboardPage() {
   };
 
   const loadContributions = async () => {
-    setLoadingContributions(true);
     try {
       const res = await fetch('/api/contributions');
       const data = await res.json();
@@ -176,8 +166,6 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.warn('Failed to load contributions:', err);
-    } finally {
-      setLoadingContributions(false);
     }
   };
 
@@ -237,7 +225,12 @@ export default function DashboardPage() {
       const calcResult = data.calculation || data;
       if (data.success && calcResult) {
         setCalculation(calcResult);
-        setShowSummaryModal(true);
+        setDeploymentStage('review');
+        // Smoothly bring the deployment cockpit into view
+        const hubEl = document.getElementById('deployment-hub');
+        if (hubEl) {
+          hubEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       } else {
         alert(data.message || 'Failed to calculate schedule');
       }
@@ -337,6 +330,7 @@ export default function DashboardPage() {
           },
         },
       } : null);
+      setDeploymentStage('completed');
       batchStateRef.current = null;
     } catch (err: any) {
       console.warn('[ContraGit] Batch error or sleep interruption:', err);
@@ -353,13 +347,13 @@ export default function DashboardPage() {
         completed,
         error: `Connection paused or interrupted (${err.message || 'network drop'}). Saved ${completed} commits to GitHub.`,
       } : null);
+      setDeploymentStage('paused');
     }
   };
 
   const handleConfirmAndStart = async () => {
-    setShowSummaryModal(false);
     setStartingJob(true);
-    setShowProgressModal(true);
+    setDeploymentStage('deploying');
 
     try {
       const lockedDates = Object.keys(existingContributions).filter(d => (existingContributions[d] || 0) > 0);
@@ -432,7 +426,7 @@ export default function DashboardPage() {
       await runBatchLoop(allCommits, 0, null, null);
     } catch (err: any) {
       alert(err.message || 'Failed to start generation job');
-      setShowProgressModal(false);
+      setDeploymentStage('failed');
     } finally {
       setStartingJob(false);
     }
@@ -440,19 +434,31 @@ export default function DashboardPage() {
 
   const handlePauseGeneration = () => {
     isPausedRef.current = true;
+    setDeploymentStage('paused');
   };
 
   const handleResumeGeneration = async () => {
     if (!batchStateRef.current) return;
     const { allCommits, currentIndex, lastCommitSha, lastTreeSha } = batchStateRef.current;
     setActiveJob(prev => prev ? { ...prev, status: 'running', error: undefined } : null);
+    setDeploymentStage('deploying');
     await runBatchLoop(allCommits, currentIndex, lastCommitSha, lastTreeSha);
   };
 
   const handleStopAndKeep = () => {
     batchStateRef.current = null;
-    setShowProgressModal(false);
+    setDeploymentStage('idle');
     setActiveJob(null);
+  };
+
+  const handleCancelReview = () => {
+    setDeploymentStage('idle');
+  };
+
+  const handleResetHub = () => {
+    setDeploymentStage('idle');
+    setActiveJob(null);
+    setCalculation(null);
   };
 
   const triggerSocialAction = async (action: 'star' | 'follow') => {
@@ -599,75 +605,29 @@ export default function DashboardPage() {
               onCustomPrefixChange={setCustomMessagePrefix}
             />
 
-            {/* Right Column: Deployment HUD & Action Center */}
-            <div
-              className="glass-panel"
-              style={{
-                padding: '1.5rem',
-                border: '1px solid var(--border-active)',
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.04) 100%)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
-                  <div>
-                    <span style={{ fontSize: '0.725rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Authoring Queue
-                    </span>
-                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1.1, marginTop: '0.2rem' }}>
-                      {effectiveTotal} <span style={{ fontSize: '1rem', color: 'var(--emerald-400)', fontWeight: 600 }}>commits</span>
-                    </div>
-                  </div>
-                  <Badge variant="emerald" icon={<Sparkles size={12} />}>
-                    Ready to Push
-                  </Badge>
-                </div>
-
-                <div
-                  style={{
-                    background: 'rgba(0, 0, 0, 0.35)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '0.85rem 1rem',
-                    marginBottom: '1.5rem',
-                    fontSize: '0.825rem',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Target Repository:</span>
-                    <code className="mono" style={{ color: 'var(--emerald-400)' }}>{repoOwner}/{selectedRepo || 'repo'}</code>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Target Branch:</span>
-                    <code className="mono" style={{ color: 'var(--cyan-400)' }}>{branch}</code>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Active Days:</span>
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{effectiveDays} days</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Safety:</span>
-                    <span style={{ color: 'var(--emerald-400)', fontWeight: 500 }}>Stateless 5-commit chunks</span>
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={handleCalculateSchedule}
-                disabled={calculating || startingJob || (activeMode === 'canvas' && totalCommitsInCanvas === 0)}
-                loading={calculating}
-                iconRight={<Play size={16} fill="currentColor" />}
-                style={{ width: '100%', minHeight: '50px', fontSize: '1.05rem' }}
-              >
-                Deploy Schedule
-              </Button>
-            </div>
+            {/* Right Column: Integrated Stateful Deployment Control Hub */}
+            <DeploymentControlHub
+              stage={deploymentStage}
+              repoOwner={repoOwner || user?.login || 'user'}
+              selectedRepo={selectedRepo}
+              branch={branch}
+              effectiveTotal={effectiveTotal}
+              effectiveDays={effectiveDays}
+              originalPreservedDays={originalActiveDays}
+              activeMode={activeMode}
+              languageConfig={languageConfig}
+              calculation={calculation}
+              calculating={calculating}
+              job={activeJob}
+              hasBatchState={Boolean(batchStateRef.current)}
+              onReviewPlan={handleCalculateSchedule}
+              onCancelReview={handleCancelReview}
+              onConfirmAndDeploy={handleConfirmAndStart}
+              onPause={handlePauseGeneration}
+              onResume={handleResumeGeneration}
+              onStopAndKeep={handleStopAndKeep}
+              onReset={handleResetHub}
+            />
           </div>
 
           {/* Voluntary Support / Social Feedback */}
@@ -714,100 +674,15 @@ export default function DashboardPage() {
         </div>
       </main>
 
-      {/* Pre-Flight Review Modal */}
-      {showSummaryModal && calculation && (
-        <div className="modal-backdrop">
-          <div className="modal-card">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              <GitCommit size={22} color="var(--emerald-400)" />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Schedule Pre-Flight Summary</h3>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.75rem',
-                marginBottom: '1.5rem',
-                background: 'rgba(0, 0, 0, 0.35)',
-                padding: '1.25rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-subtle)',
-                fontSize: '0.875rem',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Mode:</span>
-                <span className="mono" style={{ color: 'var(--emerald-400)', fontWeight: 600 }}>
-                  {activeMode === 'canvas' ? '🎨 Visual Canvas Studio' : '⚡ Quick Rules'}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Target:</span>
-                <span className="mono" style={{ color: 'var(--emerald-400)' }}>{calculation.repository} ({branch})</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Date Coverage:</span>
-                <span>{calculation.dateRange}</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Active Days:</span>
-                <span>{calculation.eligibleDays} days</span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Commits to Author:</span>
-                <strong style={{ color: 'var(--emerald-400)', fontSize: '1rem' }}>{calculation.totalCommits} commits</strong>
-              </div>
-              {calculation.protectedDays && calculation.protectedDays > 0 ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Original Activity:</span>
-                  <span className="mono" style={{ color: 'var(--cyan-400)', fontWeight: 600 }}>
-                    🔒 {calculation.protectedDays} days preserved
-                  </span>
-                </div>
-              ) : null}
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-muted)' }}>Execution Pipeline:</span>
-                <span className="mono" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  Stateless Micro-Batches (~{Math.ceil(calculation.totalCommits / 5)} requests)
-                </span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <Button
-                variant="ghost"
-                size="md"
-                onClick={() => setShowSummaryModal(false)}
-              >
-                Back / Edit
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={handleConfirmAndStart}
-              >
-                Confirm & Deploy
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Live Batched Execution Modal */}
-      <BatchProgressModal
+      {/* Ambient Floating Mini-Island (visible when scrolled away during execution) */}
+      <AmbientDeployIsland
+        stage={deploymentStage}
         job={activeJob}
         repoOwner={repoOwner || user?.login || 'user'}
         selectedRepo={selectedRepo}
         branch={branch}
-        hasBatchState={Boolean(batchStateRef.current)}
         onPause={handlePauseGeneration}
         onResume={handleResumeGeneration}
-        onStopAndKeep={handleStopAndKeep}
-        onClose={() => {
-          setShowProgressModal(false);
-          setActiveJob(null);
-        }}
       />
 
       {/* Mobile Sticky Bottom Bar */}

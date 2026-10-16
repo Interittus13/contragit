@@ -19,7 +19,7 @@ describe('CommitJobManager - executeCommitBatch', () => {
     const mockClient = {
       createBlob: vi.fn().mockResolvedValue({ sha: 'mock_blob_sha' }),
       createTree: vi.fn().mockResolvedValue({ sha: 'mock_tree_sha' }),
-      createCommit: vi.fn().mockImplementation((owner, repo, msg, treeSha, parents) => {
+      createCommit: vi.fn().mockImplementation((_owner, _repo, _msg, _treeSha, parents) => {
         return Promise.resolve({ sha: `mock_commit_${parents[0] || 'root'}` });
       }),
       updateBranchRef: vi.fn().mockResolvedValue(undefined),

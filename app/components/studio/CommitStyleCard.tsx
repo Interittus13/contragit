@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { CommitMessageStyle } from '@/lib/types/scheduler';
 import { Badge } from '@/app/components/ui/Badge';

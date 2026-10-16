@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
 
 export interface MobileBottomBarProps {

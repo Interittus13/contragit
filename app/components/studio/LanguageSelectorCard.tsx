@@ -1,18 +1,13 @@
 'use client';
 
-import React from 'react';
 import { Card } from '@/app/components/ui/Card';
 import { Badge } from '@/app/components/ui/Badge';
-import { 
-  TargetLanguageConfig, 
-  TargetLanguageId, 
-  TargetPresetId 
-} from '@/lib/types/language';
+import { TargetLanguageConfig } from '@/lib/types/language';
 import { 
   LanguageMasqueradeEngine, 
   languageMasqueradeEngine 
 } from '@/lib/services/LanguageMasqueradeEngine';
-import { Code2, Layers, Terminal, Sparkles, Check } from 'lucide-react';
+import { Code2, Layers, Terminal, Check } from 'lucide-react';
 
 export interface LanguageSelectorCardProps {
   config: TargetLanguageConfig;
