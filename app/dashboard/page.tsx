@@ -1,24 +1,25 @@
 'use client';
 
-import React, { useEffect, useState, useMemo, useRef } from 'react';
+import Link from 'next/link';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { 
-  Compass, 
-  GitCommit, 
-  Palette, 
-  Play, 
-  Sparkles, 
-  Sliders, 
-  Star, 
-  UserPlus 
+import {
+  Compass,
+  GitCommit,
+  Palette,
+  Play,
+  Sparkles,
+  Sliders,
+  Star,
+  UserPlus
 } from 'lucide-react';
 
-import { 
-  Weekday, 
-  WeekdayCounts, 
-  FilterPreset, 
-  FilterOption, 
-  ScheduleCalculation, 
+import {
+  Weekday,
+  WeekdayCounts,
+  FilterPreset,
+  FilterOption,
+  ScheduleCalculation,
   CommitJob,
   CustomCommitMatrix,
   CommitMessageStyle,
@@ -438,21 +439,17 @@ export default function DashboardPage() {
 
   return (
     <div className="page-container">
+      {/* Ambient background atmosphere */}
+      <div className="ambient-glow" />
+      <div className="ambient-grid" />
+
       {/* Universal Responsive Header */}
       <AppHeader user={user} activeNav="dashboard" />
 
       {/* Main Studio Hub */}
-      <main style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', flex: 1 }}>
+      <main style={{ flex: 1 }}>
         {/* Studio Topbar: Mode Switcher & Live Stats */}
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '1rem',
-          }}
-        >
+        <div className="cluster-between" style={{ marginBottom: '1.25rem' }}>
           <Tabs
             items={[
               { id: 'canvas' as const, label: 'Visual Canvas Studio', icon: <Palette size={16} /> },
@@ -463,162 +460,157 @@ export default function DashboardPage() {
           />
 
           {/* Desktop Summary Pill */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              padding: '0.5rem 1rem',
-              background: 'rgba(10, 14, 23, 0.75)',
-              border: '1px solid var(--border-default)',
-              borderRadius: 'var(--radius-lg)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Days:</span>
-              <span className="mono" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--emerald-400)' }}>
+          <div className="cluster" style={{ gap: '0.65rem' }}>
+            <div className="stat-pill">
+              <span className="stat-pill-label">Active Days</span>
+              <span className="stat-pill-val" style={{ color: 'var(--emerald-400)' }}>
                 {activeMode === 'canvas' ? activeDaysInCanvas : (calculation?.eligibleDays || '—')}
               </span>
             </div>
-            <div style={{ width: '1px', height: '14px', background: 'var(--border-subtle)' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Commits:</span>
-              <span className="mono" style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--emerald-400)' }}>
+            <div className="stat-pill">
+              <span className="stat-pill-label">Total Commits</span>
+              <span className="stat-pill-val" style={{ color: 'var(--emerald-400)' }}>
                 {activeMode === 'canvas' ? totalCommitsInCanvas : (calculation?.totalCommits || '—')}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Studio Canvas Area (when in Canvas mode) */}
-        {activeMode === 'canvas' ? (
-          <section>
-            <HeatmapCanvas
-              matrix={customMatrix}
-              onChange={(m) => setCustomMatrix(m)}
-            />
-          </section>
-        ) : (
-          <section>
-            <QuickRulesCard
-              startDate={startDate}
-              onStartDateChange={setStartDate}
-              endDate={endDate}
-              onEndDateChange={setEndDate}
-              weekdayCounts={weekdayCounts}
-              onWeekdayCountsChange={setWeekdayCounts}
-              activeFilter={activeFilter}
-              onApplyFilter={handleApplyFilter}
-              activeOption={activeOption}
-            />
-          </section>
-        )}
-
-        {/* Configuration Grid */}
-        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
-          <TargetRepoCard
-            repoOwner={repoOwner}
-            onRepoOwnerChange={setRepoOwner}
-            selectedRepo={selectedRepo}
-            onSelectedRepoChange={setSelectedRepo}
-            branch={branch}
-            onBranchChange={setBranch}
-            pushToRemote={pushToRemote}
-            onPushToRemoteChange={setPushToRemote}
-            repositories={repositories}
-            loadingRepos={loadingRepos}
-            onRefreshRepos={loadRepositories}
-          />
-
-          <CommitStyleCard
-            messageStyle={messageStyle}
-            onMessageStyleChange={setMessageStyle}
-            customPrefix={customMessagePrefix}
-            onCustomPrefixChange={setCustomMessagePrefix}
-          />
-        </section>
-
-        {/* Desktop Deploy Action Card */}
-        <div
-          className="glass-panel"
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '1.25rem',
-            padding: '1.5rem',
-            background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)',
-            border: '1px solid var(--border-active)',
-          }}
-        >
-          <div>
-            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-              Ready to Author Contribution History?
-            </h4>
-            <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)' }}>
-              Target: <code className="mono" style={{ color: 'var(--emerald-400)' }}>{repoOwner}/{selectedRepo}:{branch}</code> • {effectiveTotal} planned commits
-            </p>
-          </div>
-
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={handleCalculateSchedule}
-              disabled={calculating || startingJob || (activeMode === 'canvas' && totalCommitsInCanvas === 0)}
-              loading={calculating}
-              iconRight={<Play size={16} fill="currentColor" />}
-            >
-              Review & Deploy
-            </Button>
-          </div>
-        </div>
-
-        {/* Voluntary Support / Social Feedback */}
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '1rem',
-            padding: '1rem 1.25rem',
-            background: 'rgba(10, 14, 23, 0.5)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            fontSize: '0.85rem',
-          }}
-        >
-          <div>
-            <span style={{ color: 'var(--text-muted)' }}>ContraGit is open-source. Enjoying the tool? </span>
-            {socialMessage && (
-              <span className="mono" style={{ color: 'var(--emerald-400)', marginLeft: '0.5rem', fontWeight: 600 }}>
-                {socialMessage}
-              </span>
+        {/* Studio 2-Column Split Workspace */}
+        <div className="studio-deck">
+          {/* Primary Column: Canvas Studio / Drafting Board */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: 0 }}>
+            {activeMode === 'canvas' ? (
+              <section aria-label="Visual Canvas Studio">
+                <HeatmapCanvas
+                  matrix={customMatrix}
+                  onChange={(m) => setCustomMatrix(m)}
+                />
+              </section>
+            ) : (
+              <section aria-label="Quick Rules Engine">
+                <QuickRulesCard
+                  startDate={startDate}
+                  onStartDateChange={setStartDate}
+                  endDate={endDate}
+                  onEndDateChange={setEndDate}
+                  weekdayCounts={weekdayCounts}
+                  onWeekdayCountsChange={setWeekdayCounts}
+                  activeFilter={activeFilter}
+                  onApplyFilter={handleApplyFilter}
+                  activeOption={activeOption}
+                />
+              </section>
             )}
+
+            {/* Voluntary Support / Social Feedback */}
+            <div
+              className="cluster-between"
+              style={{
+                padding: '1rem 1.25rem',
+                background: 'rgba(10, 14, 23, 0.5)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                fontSize: '0.85rem',
+              }}
+            >
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>ContraGit is open-source. Enjoying the tool? </span>
+                {socialMessage && (
+                  <span className="mono" style={{ color: 'var(--emerald-400)', marginLeft: '0.5rem', fontWeight: 600 }}>
+                    {socialMessage}
+                  </span>
+                )}
+              </div>
+
+              <div className="cluster" style={{ gap: '0.5rem' }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => triggerSocialAction('star')}
+                  disabled={socialLoading === 'star'}
+                  icon={<Star size={14} color="#f59e0b" fill="#f59e0b" />}
+                >
+                  Star Project
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => triggerSocialAction('follow')}
+                  disabled={socialLoading === 'follow'}
+                  icon={<UserPlus size={14} />}
+                >
+                  Follow Author
+                </Button>
+              </div>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => triggerSocialAction('star')}
-              disabled={socialLoading === 'star'}
-              icon={<Star size={14} color="#f59e0b" fill="#f59e0b" />}
+          {/* Secondary Column: Inspector Command Deck */}
+          <aside className="studio-inspector">
+            {/* Deploy Command HUD */}
+            <div
+              className="glass-panel"
+              style={{
+                padding: '1.35rem',
+                border: '1px solid var(--border-active)',
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 100%)',
+              }}
             >
-              Star Project
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => triggerSocialAction('follow')}
-              disabled={socialLoading === 'follow'}
-              icon={<UserPlus size={14} />}
-            >
-              Follow Author
-            </Button>
-          </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
+                <div>
+                  <span style={{ fontSize: '0.725rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Authoring Queue
+                  </span>
+                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)', lineHeight: 1.1, marginTop: '0.2rem' }}>
+                    {effectiveTotal} <span style={{ fontSize: '0.9rem', color: 'var(--emerald-400)', fontWeight: 600 }}>commits</span>
+                  </div>
+                </div>
+                <Badge variant="emerald" icon={<Sparkles size={12} />}>
+                  Live Deck
+                </Badge>
+              </div>
+
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem', lineHeight: 1.45 }}>
+                Deploying to <code className="mono" style={{ color: 'var(--emerald-400)' }}>{selectedRepo || 'repo'}:{branch}</code> across {effectiveDays} active calendar days.
+              </p>
+
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleCalculateSchedule}
+                disabled={calculating || startingJob || (activeMode === 'canvas' && totalCommitsInCanvas === 0)}
+                loading={calculating}
+                iconRight={<Play size={16} fill="currentColor" />}
+                style={{ width: '100%', minHeight: '48px' }}
+              >
+                Deploy Schedule
+              </Button>
+            </div>
+
+            {/* Target Repo Settings */}
+            <TargetRepoCard
+              repoOwner={repoOwner}
+              onRepoOwnerChange={setRepoOwner}
+              selectedRepo={selectedRepo}
+              onSelectedRepoChange={setSelectedRepo}
+              branch={branch}
+              onBranchChange={setBranch}
+              pushToRemote={pushToRemote}
+              onPushToRemoteChange={setPushToRemote}
+              repositories={repositories}
+              loadingRepos={loadingRepos}
+              onRefreshRepos={loadRepositories}
+            />
+
+            {/* Commit Message Styling */}
+            <CommitStyleCard
+              messageStyle={messageStyle}
+              onMessageStyleChange={setMessageStyle}
+              customPrefix={customMessagePrefix}
+              onCustomPrefixChange={setCustomMessagePrefix}
+            />
+          </aside>
         </div>
       </main>
 

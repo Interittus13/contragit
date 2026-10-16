@@ -41,29 +41,29 @@ export function BatchProgressModal({
   const progressPercent = job.total > 0 ? Math.round((job.completed / job.total) * 100) : 0;
 
   return (
-    <div className="modal-backdrop">
+    <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-status-title">
       <div className="modal-card">
         {/* Modal Header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.65rem' }}>
           {job.status === 'completed' ? (
             <>
               <CheckCircle size={22} color="var(--emerald-400)" />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Schedule Completed!</h3>
+              <h3 id="modal-status-title" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Schedule Completed!</h3>
             </>
           ) : job.status === 'paused' ? (
             <>
               <Pause size={22} color="#f59e0b" />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Generation Paused</h3>
+              <h3 id="modal-status-title" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Generation Paused</h3>
             </>
           ) : job.status === 'failed' ? (
             <>
               <X size={22} color="var(--danger)" />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Generation Failed</h3>
+              <h3 id="modal-status-title" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Generation Failed</h3>
             </>
           ) : (
             <>
               <Loader2 className="animate-spin" size={22} color="var(--emerald-400)" />
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Deploying Batched Commits...</h3>
+              <h3 id="modal-status-title" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Deploying Batched Commits...</h3>
             </>
           )}
         </div>
@@ -73,7 +73,7 @@ export function BatchProgressModal({
         </p>
 
         {/* Progress Bar */}
-        <div className="progress-container">
+        <div className="progress-container" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100}>
           <div className="progress-bar" style={{ width: `${progressPercent}%` }} />
         </div>
 
@@ -94,55 +94,26 @@ export function BatchProgressModal({
 
         {/* Paused Banner */}
         {job.status === 'paused' && (
-          <div
-            style={{
-              background: 'rgba(245, 158, 11, 0.1)',
-              border: '1px solid #f59e0b',
-              padding: '1rem',
-              borderRadius: 'var(--radius-md)',
-              color: '#fbbf24',
-              fontSize: '0.85rem',
-              marginBottom: '1.5rem',
-              lineHeight: 1.5,
-            }}
-          >
-            <strong>Status:</strong> {job.error || `Paused at ${job.completed} / ${job.total} commits. Commits up to this checkpoint are permanently saved to GitHub.`}
+          <div className="info-banner info-banner-warning" style={{ marginBottom: '1.5rem' }}>
+            <div>
+              <strong>Status:</strong> {job.error || `Paused at ${job.completed} / ${job.total} commits. Commits up to this checkpoint are permanently saved to GitHub.`}
+            </div>
           </div>
         )}
 
         {/* Error Banner */}
         {job.status === 'failed' && (
-          <div
-            style={{
-              background: 'var(--danger-bg)',
-              border: '1px solid var(--danger-border)',
-              padding: '1rem',
-              borderRadius: 'var(--radius-md)',
-              color: '#fca5a5',
-              fontSize: '0.85rem',
-              marginBottom: '1.5rem',
-              lineHeight: 1.5,
-            }}
-          >
-            <strong>Error:</strong> {job.error}
+          <div className="info-banner info-banner-danger" style={{ marginBottom: '1.5rem' }}>
+            <div>
+              <strong>Error:</strong> {job.error}
+            </div>
           </div>
         )}
 
         {/* Success Banner */}
         {job.status === 'completed' && (
-          <div
-            style={{
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid var(--border-active)',
-              padding: '1rem',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--emerald-400)',
-              fontSize: '0.85rem',
-              marginBottom: '1.5rem',
-              lineHeight: 1.5,
-            }}
-          >
-            {job.result?.message}
+          <div className="info-banner info-banner-emerald" style={{ marginBottom: '1.5rem', flexDirection: 'column' }}>
+            <div>{job.result?.message}</div>
             {job.result?.pushResult?.message && (
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
                 {job.result.pushResult.message}

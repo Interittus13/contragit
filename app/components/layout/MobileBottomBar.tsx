@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, Play, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
 
 export interface MobileBottomBarProps {
@@ -18,15 +18,19 @@ export function MobileBottomBar({
   disabled = false,
 }: MobileBottomBarProps) {
   return (
-    <div className="mobile-sticky-bar">
+    <nav
+      className="mobile-sticky-bar"
+      aria-label="Mobile deployment actions"
+    >
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span
             style={{
-              fontSize: '1.05rem',
+              fontSize: '1.1rem',
               fontWeight: 800,
               color: 'var(--emerald-400)',
               fontFamily: 'var(--font-mono)',
+              lineHeight: 1.1,
             }}
           >
             {totalCommits}
@@ -44,10 +48,10 @@ export function MobileBottomBar({
         onClick={onDeploy}
         disabled={disabled || totalCommits === 0}
         iconRight={<ArrowRight size={15} />}
-        style={{ padding: '0.65rem 1.25rem', fontSize: '0.875rem' }}
+        style={{ padding: '0.65rem 1.35rem' }}
       >
         Deploy
       </Button>
-    </div>
+    </nav>
   );
 }

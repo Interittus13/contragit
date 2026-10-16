@@ -1,95 +1,255 @@
 <div align="center">
+  <img src="https://raw.githubusercontent.com/Interittus13/gitcontra/main/app/favicon.ico" alt="ContraGit Logo" width="64" height="64" onerror="this.style.display='none'"/>
   <h1>⚡ ContraGit</h1>
-  <p><strong>Architect Your GitHub Journey • Precision Contribution Scheduling & Automation</strong></p>
+  <p><strong>Architect Your GitHub Profile • Precision Contribution Scheduling & Git Activity Studio</strong></p>
 
-  [![License: MIT](https://img.shields.io/badge/License-MIT-emerald.svg)](LICENSE)
-  [![GitHub stars](https://img.shields.io/github/stars/Interittus13/gitcontra?style=flat&color=10b981)](https://github.com/Interittus13/gitcontra/stargazers)
-  [![GitHub forks](https://img.shields.io/github/forks/Interittus13/gitcontra?style=flat&color=0ea5e9)](https://github.com/Interittus13/gitcontra/network/members)
-  [![Contributions Welcome](https://img.shields.io/badge/Contributions-Welcome-brightgreen.svg?style=flat)](https://github.com/Interittus13/gitcontra/issues)
+  <p>
+    <a href="https://github.com/Interittus13/gitcontra/actions/workflows/ci.yml"><img src="https://github.com/Interittus13/gitcontra/actions/workflows/ci.yml/badge.svg" alt="CI Checks"/></a>
+    <a href="https://github.com/Interittus13/gitcontra/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-10b981.svg" alt="License: MIT"/></a>
+    <a href="https://nextjs.org"><img src="https://img.shields.io/badge/Next.js-16.4-black?logo=next.js" alt="Next.js 16"/></a>
+    <a href="https://react.dev"><img src="https://img.shields.io/badge/React-19.3-0284c7?logo=react" alt="React 19"/></a>
+    <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript" alt="TypeScript"/></a>
+    <a href="https://vitest.dev"><img src="https://img.shields.io/badge/Tested%20with-Vitest-facc15?logo=vitest" alt="Vitest"/></a>
+  </p>
 
-  <p><em>Lost your GitHub streak due to private repositories or offline coding? Want to accurately map your developer journey? ContraGit is a cloud automation engine and browser tool designed for curating and managing your GitHub profile activity.</em></p>
+  <p>
+    <em>Never let enterprise firewalls, private client orgs, or offline flights erase your visible engineering footprint. ContraGit gives developers atomic, fine-grained control to paint text, stencils, and organic streaks directly to GitHub via official low-level Git Data APIs.</em>
+  </p>
+
+  <p>
+    <a href="#-key-features"><strong>Explore Features</strong></a> •
+    <a href="#-architecture"><strong>Architecture</strong></a> •
+    <a href="#-quick-start"><strong>Quick Start</strong></a> •
+    <a href="#-contributing"><strong>Contributing</strong></a>
+  </p>
 </div>
 
 ---
 
 ## 🌟 Why ContraGit?
 
-Your GitHub contribution graph is your developer footprint. But reality doesn't always reflect on your public squares—enterprise firewalls, private repos, or simply forgetting to push can break your streaks.
+Your GitHub contribution calendar is often treated as your public engineering resume. In reality, countless software engineers do their most impactful work behind:
+- **Private enterprise organizations** with restrictive contribution sharing policies.
+- **Air-gapped enterprise networks** where commits cannot sync to personal profiles.
+- **Local offline sprints, travel, and flights** that accidentally snap multi-year streaks.
 
-**ContraGit** provides an intuitive interface to schedule, randomize, and backdate commits directly via the GitHub Git Data API. No terminal hacks, no local git rebasing scripts.
+Traditional solutions rely on crude local bash scripts, dangerous Git rebases, and high-risk file manipulations.
+
+**ContraGit** re-engineers this experience from the ground up as a **cloud-native, mobile-first Git studio**. It communicates directly with GitHub's Git Data API to build authentic Git commit graphs, trees, and references in-memory without cloning repositories to disk.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- **🗓️ Precision Scheduling:** Select any date range and specify exactly how many commits to generate per weekday.
-- **🎲 Intelligent Filters & Randomization:** Natural distribution modes (All Days, Even Days, Odd Days, Random) with adjustable min/max densities.
-- **⚡ Zero Configuration Required:** No local Git installations or complex rebases needed. Everything executes seamlessly in the cloud.
-- **🔒 Secure GitHub OAuth:** Minimal permissions requested (`read:user`, `user:email`, `repo`). Access tokens remain secured in your private session.
-- **🛡️ 100% Native Commits:** Commits are crafted directly into the repository tree via GitHub's official Git Data REST API.
-- **🧩 Browser Extension Included:** Manifest V3 extension ready to unpack and run directly from Chrome/Edge.
+### 🗓️ Precision Schedule Engine
+- **Granular Day-by-Day Controls:** Specify target commit volumes for individual weekdays (Monday through Sunday) with intuitive steppers.
+- **Intelligent Density Filters:** Apply presets including *All Days*, *Even Days*, *Odd Days*, and *Organic Randomizer* with custom min/max bounds.
+- **Natural Gaussian Variation:** Configurable commit randomization prevents rigid, artificial-looking uniform commit tallies.
+
+### 🎨 Pixel Typography & Stencil Library
+- **Built-In 5×7 Bitmap Alphabet:** Spell any word, username, or ASCII message across your 52-week calendar with real-time stencil previews.
+- **Predefined Stencils:** Instant 1-click presets for **Hearts**, **Retro Space Invaders**, and **Zigzags**.
+- **Interactive Stencil Playground:** Test words and preview commit densities and active days live on the landing page simulator.
+
+### ⚡ Resilient Stateless Micro-Batching
+- **Sleep & Disconnect Immune:** Authors commits in atomic, 5-commit chunks.
+- **Automatic Resume:** If your laptop closes, Wi-Fi drops, or your browser tab closes, commits are already safely stamped on GitHub. Reopening the studio resumes progress immediately.
+
+### 🛡️ 100% Native Git Data API Architecture
+- **Zero Local Disk Writes:** No disk space required, no terminal commands, and no local `git clone` overhead.
+- **In-Memory Objects:** Creates Git blobs, trees, commit objects, and atomic branch reference pointers directly through GitHub REST endpoints.
+
+### 📱 Mobile-First Studio UI
+- **Touch-Optimized Canvas:** Includes dedicated **Pan vs. Draw** touch toggles and a **1.5x Zoom** mode for thumb-level precision on phones and tablets.
+- **Dark Aesthetic:** Designed around principles—fluid spring physics, segmented controls, specular rim highlights, and zero layout shift.
+- **Docked Safety Controls:** Safe-area responsive navigation and bottom command decks designed for mobile ergonomics.
+
+### 🔒 100% Private — Zero Server-Side Database
+- **No Token Storage:** ContraGit stores **zero** personal code, access tokens, or repository content on any external database.
+- **Stateless HTTP-Only Sessions:** OAuth tokens exist strictly inside encrypted, secure session cookies on your own client browser.
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TD
+    subgraph Client["Browser Studio (Next.js 16 Client)"]
+        UI["Interactive 52-Week Canvas"]
+        SE["ScheduleEngine (Domain Logic)"]
+        MB["Micro-Batch Coordinator"]
+    end
+
+    subgraph Server["Next.js Serverless Route Handlers"]
+        OAuth["/api/auth (OAuth Handler)"]
+        BatchAPI["/api/commit-batch (Chunk Executor)"]
+        RepoAPI["/api/repos & /api/validate-repo"]
+    end
+
+    subgraph GitHub["GitHub Infrastructure"]
+        GitData["GitHub Git Data API v3"]
+        Blobs["Git Blobs & Trees"]
+        Commits["Git Commit Objects"]
+        Refs["Branch Refs (heads/main)"]
+        Graph["Public Contribution Graph"]
+    end
+
+    UI --> SE
+    SE --> MB
+    MB -- "Stateless 5-Commit Batches" --> BatchAPI
+    OAuth -- "HTTP-Only Encrypted Cookie" --> Client
+    BatchAPI --> GitData
+    RepoAPI --> GitData
+    GitData --> Blobs --> Commits --> Refs --> Graph
+```
 
 ---
 
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
-- Node.js >= 18
-- A GitHub OAuth Application ([Register one here](https://github.com/settings/developers))
+- [Node.js](https://nodejs.org/) `>= 18.18.0` (Node 20+ recommended)
+- `npm` `>= 9.0.0`
+- A registered [GitHub OAuth Application](https://github.com/settings/developers)
 
-### 2. Configure Environment
-Create a `.env` file in the root directory:
+### 2. Register GitHub OAuth App
+1. Go to **[GitHub Developer Settings &rarr; OAuth Apps](https://github.com/settings/developers)**.
+2. Click **New OAuth App**.
+3. Set the following fields:
+   - **Application name:** `ContraGit Development`
+   - **Homepage URL:** `http://localhost:3000`
+   - **Authorization callback URL:** `http://localhost:3000/api/auth/callback`
+4. Generate a **Client Secret** and copy both your `Client ID` and `Client Secret`.
 
-```env
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
-REPO_OWNER=Interittus13
-REPO_NAME=gitcontra
+### 3. Clone & Configure Environment
+```bash
+# Clone the repository
+git clone https://github.com/Interittus13/gitcontra.git
+cd gitcontra
+
+# Copy sample environment configuration
+cp .env.example .env
 ```
 
-### 3. Run Locally
+Edit `.env` with your OAuth credentials:
+```env
+GITHUB_CLIENT_ID=your_oauth_client_id_here
+GITHUB_CLIENT_SECRET=your_oauth_client_secret_here
+
+# Optional: Default target repo to pre-populate in the studio
+REPO_OWNER=Interittus13
+REPO_NAME=gitcontra
+
+# Optional: GitHub user profile for optional follow action
+GITHUB_FOLLOW_USER=Interittus13
+```
+
+### 4. Install & Launch
 ```bash
 # Install dependencies
 npm install
 
-# Start local server with Vercel CLI
+# Start development server with Turbopack
 npm run dev
 ```
 
-### 4. Deploy to Vercel
-Deploy with a single command or connect your repository on [Vercel](https://vercel.com):
+Open [http://localhost:3000](http://localhost:3000) in your browser (works across Chrome, Brave, Safari, and Firefox).
+
+---
+
+## 🧪 Testing & Verification
+
+ContraGit maintains 100% green verification pipelines across TypeScript, unit testing, and production builds.
+
 ```bash
-npx vercel --prod
+# Run TypeScript compilation check
+npm run typecheck
+
+# Run unit tests via Vitest
+npm test
+
+# Build production bundle with Next.js Turbopack
+npm run build
+
+# Run comprehensive CI pre-flight suite
+npm run check
 ```
-Make sure to add `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` under Vercel Project Settings &rarr; Environment Variables.
 
 ---
 
-## 🧩 Chrome Extension Setup
+## 📁 Repository Structure
 
-1. Open Chrome and navigate to `chrome://extensions/`.
-2. Enable **Developer mode** in the top right corner.
-3. Click **Load unpacked** and select the [`extension/`](./extension) directory.
-4. Open the extension popup from your toolbar!
+```
+gitcontra/
+├── .github/                     # GitHub workflows and issue/PR templates
+│   ├── ISSUE_TEMPLATE/          # Bug report & feature request templates
+│   ├── workflows/               # CI and PR Semantic Lint workflows
+│   └── PULL_REQUEST_TEMPLATE.md # Standard PR checklist and guidelines
+├── app/                         # Next.js 16 App Router application
+│   ├── api/                     # Serverless Route Handlers
+│   │   ├── auth/                # GitHub OAuth login, callback, status, logout
+│   │   ├── calculate/           # Commit distribution calculations
+│   │   ├── commit-batch/        # Atomic Git Data API micro-batch authoring
+│   │   ├── repos/               # Repository list and validation
+│   │   └── social-actions/      # Star & follow helpers
+│   ├── auth/                    # Dedicated authentication view
+│   ├── components/              # UI components & Studio architecture
+│   │   ├── layout/              # AppHeader, MobileBottomBar
+│   │   ├── studio/              # TargetRepoCard, QuickRulesCard, CommitStyleCard
+│   │   ├── ui/                  # Button, Badge, Card, Tabs
+│   │   └── HeatmapCanvas.tsx    # 52-Week Interactive Matrix Studio Canvas
+│   ├── dashboard/               # Pro Studio workspace page
+│   ├── instructions/            # Architecture and usage documentation
+│   ├── globals.css              # Apple-inspired design tokens and layout primitives
+│   ├── layout.tsx               # Root layout & ambient backdrop
+│   └── page.tsx                 # Landing page with Live Interactive Stencil Studio
+├── extension/                   # Manifest V3 browser extension
+├── lib/                         # Core domain logic and client services
+│   ├── services/                # GitHubApiClient, ScheduleEngine, SessionManager
+│   ├── types/                   # TypeScript interfaces (github, scheduler)
+│   └── utils/                   # 5x7 PixelFont engine and stencil matrices
+└── tests/                       # Automated Vitest test suites
+```
 
 ---
 
-## 🛠️ Tech Stack
+## 🧩 Browser Extension Setup (Chrome / Brave / Edge)
 
-- **Frontend**: Vanilla HTML5, CSS3 Glassmorphism, Modern ES Modules
-- **Backend**: Vercel Serverless Functions (Node.js runtime)
-- **API Engine**: GitHub REST API v3 (Git Data Blobs, Trees, Commits, Refs)
-- **Browser Extension**: Manifest V3 compliant
+ContraGit ships with an unpackable **Manifest V3** browser extension for quick access:
+
+1. Open your browser extension settings:
+   - **Chrome / Brave:** `chrome://extensions/`
+   - **Edge:** `edge://extensions/`
+2. Enable **Developer mode** toggle in the top-right corner.
+3. Click **Load unpacked** and select the [`extension/`](./extension) folder.
+4. Launch the extension popup from your browser toolbar!
+
+---
+
+## 🛡️ Security & Privacy
+
+- **Stateless OAuth:** Access tokens are stored exclusively inside encrypted, HTTP-only, SameSite cookies.
+- **Minimal Scopes:** Requests only the minimum required GitHub scopes (`read:user`, `user:email`, `repo`).
+- **Zero Third-Party Trackers:** No analytics trackers, no telemetry probes, and no marketing beacons.
+- For vulnerability reporting, please review our [Security Policy](SECURITY.md).
 
 ---
 
 ## 🤝 Contributing
 
-Contributions, bug reports, and feature requests are welcome!  
-Feel free to check the [issues page](https://github.com/Interittus13/gitcontra/issues).
+We welcome contributions of all levels! Please check out our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting a Pull Request.
+
+1. Fork the repo and create your branch: `git checkout -b feat/your-feature-name`
+2. Ensure all tests pass: `npm run check`
+3. Commit with Conventional Commits: `git commit -m 'feat: describe your change'`
+4. Submit your PR using the [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md).
 
 ---
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is open-source software licensed under the **[MIT License](LICENSE)**.
+
+<div align="center">
+  <sub>Crafted with precision for developers who take pride in their craft.</sub>
+</div>

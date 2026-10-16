@@ -35,42 +35,55 @@ export function CommitStyleCard({
       subtitle="Configure how generated commit titles appear in git history"
       badge={<Badge variant="muted">Git History</Badge>}
     >
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+      <div
+        role="radiogroup"
+        aria-label="Commit message style preset"
+        className="grid-auto-fit"
+        style={{ marginBottom: '1rem' }}
+      >
         {[
           { id: 'conventional' as const, label: 'Conventional Commits', desc: 'feat:, fix:, docs:, refactor:' },
           { id: 'minimal' as const, label: 'Minimal & Clean', desc: 'Commit #1 — 2024-01-01' },
           { id: 'custom' as const, label: 'Custom Prefix', desc: 'User specified prefix with counter' },
-        ].map(style => (
-          <button
-            key={style.id}
-            type="button"
-            onClick={() => onMessageStyleChange(style.id)}
-            style={{
-              padding: '0.85rem',
-              borderRadius: 'var(--radius-md)',
-              border: messageStyle === style.id ? '1px solid var(--emerald-400)' : '1px solid var(--border-default)',
-              background: messageStyle === style.id ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.02)',
-              textAlign: 'left',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-          >
-            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: messageStyle === style.id ? 'var(--emerald-400)' : 'var(--text-primary)', marginBottom: '0.2rem' }}>
-              {style.label}
-            </div>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              {style.desc}
-            </div>
-          </button>
-        ))}
+        ].map(style => {
+          const isSelected = messageStyle === style.id;
+          return (
+            <button
+              key={style.id}
+              role="radio"
+              aria-checked={isSelected}
+              type="button"
+              onClick={() => onMessageStyleChange(style.id)}
+              className="interactive"
+              style={{
+                padding: '0.9rem',
+                borderRadius: 'var(--radius-md)',
+                border: isSelected ? '1px solid rgba(16, 185, 129, 0.45)' : '1px solid var(--border-default)',
+                borderTop: isSelected ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid var(--border-subtle)',
+                background: isSelected ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255, 255, 255, 0.025)',
+                textAlign: 'left',
+                cursor: 'pointer',
+                boxShadow: isSelected ? '0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
+              }}
+            >
+              <div style={{ fontSize: '0.875rem', fontWeight: 700, color: isSelected ? 'var(--emerald-400)' : 'var(--text-primary)', marginBottom: '0.2rem' }}>
+                {style.label}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {style.desc}
+              </div>
+            </button>
+          );
+        })}
       </div>
 
       {messageStyle === 'custom' && (
         <div style={{ marginBottom: '1rem' }}>
-          <label className="form-label">
+          <label className="form-label" htmlFor="custom-prefix-input">
             Custom Message Prefix
           </label>
           <input
+            id="custom-prefix-input"
             type="text"
             value={customPrefix}
             onChange={(e) => onCustomPrefixChange(e.target.value)}

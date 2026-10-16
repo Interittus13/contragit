@@ -4,27 +4,29 @@ import { ArrowLeft, ArrowRight, CheckCircle2, GitBranch, KeyRound, Shield, Spark
 import { AppHeader } from '@/app/components/layout/AppHeader';
 import { Card } from '@/app/components/ui/Card';
 import { Badge } from '@/app/components/ui/Badge';
-import { Button } from '@/app/components/ui/Button';
 
 export default function InstructionsPage() {
   return (
-    <div className="page-container" style={{ maxWidth: '880px' }}>
+    <div className="page-container" style={{ maxWidth: '900px' }}>
+      <div className="ambient-glow" />
+      <div className="ambient-grid" />
+
       <AppHeader activeNav="instructions" />
 
-      <main style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+      <main className="stack-lg">
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-            <Badge variant="emerald"><Sparkles size={12} /> Documentation</Badge>
+            <Badge variant="emerald"><Sparkles size={12} /> System Documentation</Badge>
           </div>
-          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 2.75rem)', letterSpacing: '-0.03em', marginBottom: '0.75rem' }}>
-            System Setup Guide
+          <h1 style={{ fontSize: 'clamp(2rem, 5vw, 2.75rem)', letterSpacing: '-0.035em', marginBottom: '0.75rem' }}>
+            System Setup &amp; Architecture Guide
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.6 }}>
             Follow these two essential steps to ensure all generated commits accurately render on your public GitHub contribution graph.
           </p>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div className="stack">
           {/* Step 1 */}
           <Card
             title="1. Create a Dedicated Target Repository"
@@ -34,20 +36,8 @@ export default function InstructionsPage() {
             <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem', fontSize: '0.9rem' }}>
               Create a new repository on your GitHub account (public or private). We recommend keeping it isolated in a dedicated repository rather than polluting production codebases.
             </p>
-            <div
-              style={{
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
-                padding: '1rem',
-                borderRadius: 'var(--radius-md)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                fontSize: '0.875rem',
-                color: 'var(--emerald-300)',
-              }}
-            >
-              <CheckCircle2 size={18} color="var(--emerald-400)" />
+            <div className="info-banner info-banner-emerald">
+              <CheckCircle2 size={18} color="var(--emerald-400)" style={{ flexShrink: 0 }} />
               <span>
                 <strong>Crucial Requirement:</strong> Check the box that says <em>&quot;Add a README file&quot;</em> so GitHub initializes the default branch tree.
               </span>
@@ -77,23 +67,15 @@ export default function InstructionsPage() {
               <li>Check the option: <strong>&quot;Include private contributions on my profile&quot;</strong>.</li>
               <li>Click <strong>Update Preferences</strong>.</li>
             </ol>
-            <div
-              style={{
-                background: 'var(--warning-bg)',
-                border: '1px solid var(--warning-border)',
-                padding: '1rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.825rem',
-                color: '#fcd34d',
-                lineHeight: 1.5,
-              }}
-            >
-              <strong>Cache Indexing Note:</strong> GitHub&apos;s background contribution cache can take anywhere from a few minutes to up to 24 hours to re-index historical backdated commits on your profile graph.
+            <div className="info-banner info-banner-warning">
+              <div>
+                <strong>Cache Indexing Note:</strong> GitHub&apos;s background contribution cache can take anywhere from a few minutes to up to 24 hours to re-index historical backdated commits on your profile graph.
+              </div>
             </div>
           </Card>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem' }}>
+        <div className="cluster-between" style={{ paddingTop: '1rem' }}>
           <Link href="/" className="btn btn-ghost btn-md">
             <ArrowLeft size={16} /> Back to Home
           </Link>

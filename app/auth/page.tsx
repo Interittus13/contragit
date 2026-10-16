@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, AlertCircle, KeyRound, Shield, Loader2, Lock } from 'lucide-react';
 import { GitHubIcon } from '@/app/components/GitHubIcon';
 import { Button } from '@/app/components/ui/Button';
-import { Badge } from '@/app/components/ui/Badge';
 
 function AuthContent() {
   const router = useRouter();
@@ -38,7 +37,7 @@ function AuthContent() {
 
   return (
     <div
-      className="glass-panel"
+      className="glass-panel-elevated modal-card"
       style={{
         maxWidth: '460px',
         width: '100%',
@@ -75,21 +74,7 @@ function AuthContent() {
 
       {/* Error Banner */}
       {errorParam && (
-        <div
-          style={{
-            background: 'var(--danger-bg)',
-            border: '1px solid var(--danger-border)',
-            padding: '0.85rem 1rem',
-            borderRadius: 'var(--radius-md)',
-            marginBottom: '1.5rem',
-            color: '#fca5a5',
-            fontSize: '0.85rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            textAlign: 'left',
-          }}
-        >
+        <div className="info-banner info-banner-danger" style={{ marginBottom: '1.5rem', textAlign: 'left' }}>
           <AlertCircle size={18} style={{ flexShrink: 0 }} />
           <span>GitHub authentication failed. Please try again.</span>
         </div>
@@ -102,16 +87,7 @@ function AuthContent() {
           <span style={{ fontSize: '0.9rem', fontFamily: 'var(--font-mono)' }}>Verifying OAuth credentials...</span>
         </div>
       ) : !configured ? (
-        <div
-          style={{
-            background: 'var(--warning-bg)',
-            border: '1px solid var(--warning-border)',
-            padding: '1.25rem',
-            borderRadius: 'var(--radius-md)',
-            textAlign: 'left',
-            marginBottom: '1.5rem',
-          }}
-        >
+        <div className="info-banner info-banner-warning" style={{ marginBottom: '1.5rem', flexDirection: 'column', textAlign: 'left' }}>
           <h4 style={{ color: '#fcd34d', fontSize: '0.95rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <AlertCircle size={16} /> Environment Keys Missing
           </h4>
@@ -168,7 +144,9 @@ function AuthContent() {
 
 export default function AuthPage() {
   return (
-    <div className="page-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
+    <div className="page-container" style={{ justifyContent: 'center', alignItems: 'center', minHeight: '100dvh' }}>
+      <div className="ambient-glow" />
+      <div className="ambient-grid" />
       <Suspense fallback={
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}>
           <Loader2 className="animate-spin" size={20} color="var(--emerald-400)" />

@@ -25,38 +25,17 @@ export function Card({
 
   return (
     <div
-      className={`glass-panel ${elevated ? 'glass-panel-elevated' : ''} ${className}`}
-      style={{
-        padding: '1.5rem',
-        ...style,
-      }}
+      className={`glass-panel ui-card ${elevated ? 'glass-panel-elevated' : ''} ${className}`}
+      style={style}
     >
       {hasHeader && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: '1rem',
-            marginBottom: '1.25rem',
-            paddingBottom: '1rem',
-            borderBottom: '1px solid var(--border-subtle)',
-          }}
-        >
+        <div className="card-header">
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-              {title && (
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
-                  {title}
-                </h3>
-              )}
+            <div className="card-title-group">
+              {title && <h3 className="card-title">{title}</h3>}
               {badge}
             </div>
-            {subtitle && (
-              <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="card-subtitle">{subtitle}</p>}
           </div>
           {headerAction && <div>{headerAction}</div>}
         </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { GitBranch, GitFork, Lock, RefreshCw } from 'lucide-react';
+import { GitBranch, RefreshCw } from 'lucide-react';
 import { Card } from '@/app/components/ui/Card';
 import { Badge } from '@/app/components/ui/Badge';
 import { GitHubRepository } from '@/lib/types/github';
@@ -44,20 +44,22 @@ export function TargetRepoCard({
           onClick={onRefreshRepos}
           disabled={loadingRepos}
           className="btn btn-ghost btn-sm"
-          style={{ padding: '0.35rem 0.6rem' }}
+          style={{ padding: '0.35rem 0.6rem', minHeight: '34px' }}
           title="Refresh repository list"
+          aria-label="Refresh repository list"
         >
           <RefreshCw size={13} className={loadingRepos ? 'animate-spin' : ''} />
         </button>
       }
     >
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+      <div className="grid-auto-fit" style={{ marginBottom: '1.25rem' }}>
         {/* Repo Owner */}
         <div>
-          <label className="form-label">
+          <label className="form-label" htmlFor="repo-owner-input">
             Repository Owner / Organization
           </label>
           <input
+            id="repo-owner-input"
             type="text"
             value={repoOwner}
             onChange={(e) => onRepoOwnerChange(e.target.value)}
@@ -68,10 +70,11 @@ export function TargetRepoCard({
 
         {/* Repo Select */}
         <div>
-          <label className="form-label">
+          <label className="form-label" htmlFor="repo-select-input">
             Repository Name
           </label>
           <select
+            id="repo-select-input"
             value={selectedRepo}
             onChange={(e) => onSelectedRepoChange(e.target.value)}
             className="form-control"
@@ -93,10 +96,11 @@ export function TargetRepoCard({
 
         {/* Target Branch */}
         <div>
-          <label className="form-label">
+          <label className="form-label" htmlFor="target-branch-input">
             Target Branch
           </label>
           <input
+            id="target-branch-input"
             type="text"
             value={branch}
             onChange={(e) => onBranchChange(e.target.value)}
@@ -106,35 +110,37 @@ export function TargetRepoCard({
         </div>
       </div>
 
-      {/* Push to Remote Toggle */}
-      <label
+      {/* Push to Remote Apple Switch */}
+      <div
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '0.75rem',
-          padding: '0.85rem 1rem',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          padding: '0.9rem 1.1rem',
           borderRadius: 'var(--radius-md)',
           background: pushToRemote ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-          border: pushToRemote ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid var(--border-subtle)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
+          border: pushToRemote ? '1px solid rgba(16, 185, 129, 0.28)' : '1px solid var(--border-subtle)',
+          transition: 'all 0.2s var(--spring-ease)',
         }}
       >
-        <input
-          type="checkbox"
-          checked={pushToRemote}
-          onChange={(e) => onPushToRemoteChange(e.target.checked)}
-          style={{ width: '18px', height: '18px', accentColor: 'var(--emerald-500)', cursor: 'pointer' }}
-        />
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-            Push Directly to GitHub Remote
+            Push to GitHub Remote
           </span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Updates the branch head on GitHub so commits show immediately on your profile graph.
+            Updates remote branch immediately for profile graph display.
           </span>
         </div>
-      </label>
+        <label className="ios-switch" aria-label="Toggle direct push to GitHub">
+          <input
+            type="checkbox"
+            checked={pushToRemote}
+            onChange={(e) => onPushToRemoteChange(e.target.checked)}
+          />
+          <span className="ios-switch-slider" />
+        </label>
+      </div>
     </Card>
   );
 }

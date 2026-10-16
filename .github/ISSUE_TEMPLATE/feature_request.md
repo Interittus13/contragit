@@ -1,20 +1,48 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
-title: ''
-labels: enhancement
+name: '✨ Feature Request'
+about: 'Suggest an enhancement, new stencil, or architectural idea for ContraGit'
+title: 'feat: [short summary of feature]'
+labels: ['enhancement', 'triage']
 assignees: ''
+---
+
+## 🎯 Feature Description
+
+<!-- What capability, stencil, filter, or UX enhancement are you proposing? -->
 
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+## 🧐 Problem Statement / Motivation
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+<!--
+  Is your feature request related to a problem or limitation?
+  Ex: "I want to be able to invert selection or import an image bitmap as a stencil..."
+-->
 
-**Describe alternatives you've considered**
-A clear and concise description of any alternative solutions or features you've considered.
+---
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## 💡 Proposed Solution
+
+<!--
+  Describe the solution or experience you'd love to see in ContraGit.
+  Explain how it aligns with mobile-first and stateless principles.
+-->
+
+---
+
+## 🔄 Alternative Approaches Considered
+
+<!-- Describe any workarounds or alternative solutions you have explored. -->
+
+---
+
+## 🎨 Visual Concepts or Mockups
+
+<!-- If you have wireframes, mockups, or UI sketches, share them here. -->
+
+---
+
+## 🤝 Willingness to Contribute
+
+- [ ] I am willing to submit a Pull Request to implement this feature.
+- [ ] I would love guidance and pairing from maintainers to build this.

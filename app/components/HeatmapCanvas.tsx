@@ -5,18 +5,13 @@ import { CustomCommitMatrix } from '@/lib/types/scheduler';
 import { renderTextToPixelMatrix, STENCILS } from '@/lib/utils/pixelFont';
 import { 
   Brush, 
-  Eraser, 
   RotateCcw, 
-  Sparkles, 
   Type, 
   Shuffle, 
-  Heart,
-  Grid,
-  Check,
-  ZoomIn,
-  Hand,
-  Info,
-  X
+  Check, 
+  ZoomIn, 
+  Hand, 
+  X 
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
@@ -88,11 +83,15 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
     return weeks;
   }, []);
 
-  // Window-level mouseup handler
+  // Window-level pointer tracking for seamless continuous drawing
   useEffect(() => {
-    const handleMouseUp = () => setIsMouseDown(false);
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => window.removeEventListener('mouseup', handleMouseUp);
+    const handlePointerUp = () => setIsMouseDown(false);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+    return () => {
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
   }, []);
 
   const paintCell = useCallback((dateStr: string, level: number) => {
@@ -103,13 +102,14 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
     });
   }, [matrix, onChange]);
 
-  const handleCellClick = (dateStr: string) => {
+  const handleCellPointerDown = (dateStr: string) => {
+    setIsMouseDown(true);
     if (touchMode === 'draw') {
       paintCell(dateStr, selectedBrush);
     }
   };
 
-  const handleCellEnter = (dateStr: string) => {
+  const handleCellPointerEnter = (dateStr: string) => {
     if (isMouseDown && touchMode === 'draw') {
       paintCell(dateStr, selectedBrush);
     }
@@ -117,17 +117,6 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
 
   const handleClear = () => {
     onChange({});
-  };
-
-  const handleFillAll = (level: number) => {
-    const count = LEVEL_COMMITS[level];
-    const newMatrix: CustomCommitMatrix = {};
-    calendarGrid.forEach(week => {
-      week.forEach(cell => {
-        newMatrix[cell.dateStr] = count;
-      });
-    });
-    onChange(newMatrix);
   };
 
   const handleInvert = () => {
@@ -192,14 +181,6 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
     setShowStencilModal(false);
   };
 
-  const totalCommitsInCanvas = useMemo(() => {
-    return Object.values(matrix).reduce((acc, c) => acc + (c || 0), 0);
-  }, [matrix]);
-
-  const activeDaysInCanvas = useMemo(() => {
-    return Object.values(matrix).filter(c => (c || 0) > 0).length;
-  }, [matrix]);
-
   // Clean month headers without collisions
   const monthLabels = useMemo(() => {
     const labels: Array<{ name: string; colIndex: number }> = [];
@@ -241,12 +222,16 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
           padding: '1rem 1.25rem',
         }}
       >
-        {/* Brush Palette */}
+        {/* Brush Palette as Apple Segmented Control */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' }}>
             Brush:
           </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+          <div
+            role="radiogroup"
+            aria-label="Commit Brush Level"
+            className="segmented-control"
+          >
             {[
               { lv: 0, label: 'Erase' },
               { lv: 1, label: 'L1' },
@@ -258,25 +243,15 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
               return (
                 <button
                   key={lv}
+                  role="radio"
+                  aria-checked={isSelected}
                   type="button"
                   onClick={() => {
                     setSelectedBrush(lv);
                     setTouchMode('draw');
                   }}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    padding: '0.4rem 0.65rem',
-                    borderRadius: 'var(--radius-sm)',
-                    border: isSelected ? '1px solid var(--emerald-400)' : '1px solid var(--border-default)',
-                    background: isSelected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                    color: isSelected ? 'var(--emerald-400)' : 'var(--text-secondary)',
-                    fontSize: '0.75rem',
-                    fontWeight: isSelected ? 700 : 500,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease',
-                  }}
+                  className={`segmented-control-item ${isSelected ? 'is-active' : ''}`}
+                  style={{ padding: '0.35rem 0.65rem', minHeight: '34px', fontSize: '0.75rem' }}
                 >
                   <span
                     style={{
@@ -285,7 +260,7 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
                       borderRadius: '2px',
                       backgroundColor: LEVEL_COLORS[lv],
                       display: 'inline-block',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)',
                     }}
                   />
                   <span>{label}</span>
@@ -304,6 +279,7 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             className={`btn btn-sm ${touchMode === 'draw' ? 'btn-secondary' : 'btn-ghost'}`}
             style={{ fontSize: '0.75rem', padding: '0.4rem 0.7rem' }}
             title="Toggle between Drawing and Scrolling/Panning mode on touchscreens"
+            aria-label={`Toggle touch mode, current: ${touchMode}`}
           >
             {touchMode === 'draw' ? <Brush size={13} color="var(--emerald-400)" /> : <Hand size={13} />}
             <span>{touchMode === 'draw' ? 'Draw Mode' : 'Pan Mode'}</span>
@@ -316,6 +292,7 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             className="btn btn-ghost btn-sm"
             style={{ fontSize: '0.75rem', padding: '0.4rem 0.65rem' }}
             title="Toggle grid scale for easier touch tapping"
+            aria-label={`Toggle zoom scale, current: ${zoomLevel}`}
           >
             <ZoomIn size={13} />
             <span>{zoomLevel === 'large' ? '1.5x' : '1x'}</span>
@@ -339,6 +316,7 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             className="btn btn-ghost btn-sm"
             style={{ fontSize: '0.75rem', padding: '0.4rem 0.65rem' }}
             title="Generate organic realistic commit distribution"
+            aria-label="Generate organic realistic commit distribution"
           >
             <Shuffle size={13} />
           </button>
@@ -361,13 +339,14 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             className="btn btn-danger btn-sm"
             style={{ fontSize: '0.75rem', padding: '0.4rem 0.65rem' }}
             title="Clear all painted cells"
+            aria-label="Clear all painted cells"
           >
             <RotateCcw size={13} />
           </button>
         </div>
       </div>
 
-      {/* Main Grid Viewport */}
+      {/* Main Grid Viewport with Dynamic Touch Actions */}
       <div
         className="glass-panel"
         style={{
@@ -375,6 +354,7 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
           overflowX: 'auto',
           WebkitOverflowScrolling: 'touch',
           userSelect: 'none',
+          touchAction: touchMode === 'draw' ? 'none' : 'pan-x pan-y',
         }}
       >
         <div style={{ minWidth: `${52 * colStep + 48}px` }}>
@@ -453,9 +433,20 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
                     <div
                       key={cell.dateStr}
                       data-date={cell.dateStr}
-                      onClick={() => handleCellClick(cell.dateStr)}
-                      onMouseEnter={() => {
-                        handleCellEnter(cell.dateStr);
+                      role="button"
+                      tabIndex={-1}
+                      aria-label={`${cell.dateStr}: ${count} commits`}
+                      onPointerDown={() => {
+                        handleCellPointerDown(cell.dateStr);
+                        setHoveredCell({
+                          date: cell.dateStr,
+                          day: DAY_LABELS[cell.dayIndex],
+                          count: LEVEL_COMMITS[selectedBrush] ?? count,
+                          level: selectedBrush,
+                        });
+                      }}
+                      onPointerEnter={() => {
+                        handleCellPointerEnter(cell.dateStr);
                         setHoveredCell({
                           date: cell.dateStr,
                           day: DAY_LABELS[cell.dayIndex],
@@ -463,32 +454,20 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
                           level,
                         });
                       }}
-                      onMouseLeave={() => setHoveredCell(null)}
-                      onMouseDown={() => {
-                        setIsMouseDown(true);
-                        if (touchMode === 'draw') {
-                          paintCell(cell.dateStr, selectedBrush);
+                      onPointerLeave={() => {
+                        if (!isMouseDown) {
+                          setHoveredCell(null);
                         }
-                      }}
-                      onTouchStart={() => {
-                        if (touchMode === 'draw') {
-                          paintCell(cell.dateStr, selectedBrush);
-                        }
-                        setHoveredCell({
-                          date: cell.dateStr,
-                          day: DAY_LABELS[cell.dayIndex],
-                          count: LEVEL_COMMITS[selectedBrush] || count,
-                          level: selectedBrush,
-                        });
                       }}
                       style={{
                         width: `${cellSize}px`,
                         height: `${cellSize}px`,
-                        borderRadius: '2px',
+                        borderRadius: '2.5px',
                         backgroundColor: LEVEL_COLORS[level],
-                        border: level > 0 ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.04)',
+                        border: level > 0 ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.04)',
                         cursor: touchMode === 'draw' ? 'crosshair' : 'default',
-                        transition: 'transform 0.1s ease',
+                        transition: 'transform 0.08s var(--spring-ease), background-color 0.12s ease',
+                        touchAction: touchMode === 'draw' ? 'none' : 'auto',
                       }}
                     />
                   );
@@ -499,7 +478,7 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
         </div>
       </div>
 
-      {/* Grid Status & Inspector Bar */}
+      {/* Grid Status & Inspector Bar with Apple Translucency */}
       <div
         style={{
           display: 'flex',
@@ -507,15 +486,19 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: '0.75rem',
-          padding: '0.65rem 1rem',
-          background: 'rgba(10, 14, 23, 0.65)',
+          padding: '0.75rem 1.15rem',
+          background: 'rgba(12, 16, 24, 0.75)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
           borderRadius: 'var(--radius-md)',
           border: '1px solid var(--border-subtle)',
+          borderTop: '1px solid var(--specular-rim)',
+          boxShadow: 'var(--shadow-sm)',
           fontSize: '0.8rem',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span style={{ color: 'var(--text-muted)' }}>
+          <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
             Inspecting:
           </span>
           {hoveredCell ? (
@@ -541,7 +524,7 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
                 borderRadius: '2px',
                 backgroundColor: LEVEL_COLORS[lv],
                 display: 'inline-block',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
               }}
             />
           ))}
@@ -551,54 +534,56 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
 
       {/* Stencil / Pixel Font Modal */}
       {showStencilModal && (
-        <div className="modal-backdrop">
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="stencil-modal-title">
           <div className="modal-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Type size={18} color="var(--emerald-400)" />
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Pixel Stamp & Text Stencils</h3>
+                <h3 id="stencil-modal-title" style={{ fontSize: '1.2rem', fontWeight: 700 }}>Pixel Stamp & Text Stencils</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowStencilModal(false)}
                 className="btn btn-ghost btn-sm"
                 style={{ padding: '0.35rem' }}
+                aria-label="Close stencil modal"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Stencil Presets */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem' }}>
-              {(['text', 'heart', 'invader', 'zigzag'] as const).map(shape => (
-                <button
-                  key={shape}
-                  type="button"
-                  onClick={() => setSelectedStencilShape(shape)}
-                  style={{
-                    flex: 1,
-                    padding: '0.65rem 0.5rem',
-                    borderRadius: 'var(--radius-md)',
-                    border: selectedStencilShape === shape ? '1px solid var(--emerald-400)' : '1px solid var(--border-default)',
-                    background: selectedStencilShape === shape ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.04)',
-                    color: selectedStencilShape === shape ? 'var(--emerald-400)' : 'var(--text-secondary)',
-                    fontWeight: 600,
-                    fontSize: '0.8rem',
-                    textTransform: 'capitalize',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {shape}
-                </button>
-              ))}
+            {/* Stencil Presets Segmented Control */}
+            <div
+              role="radiogroup"
+              aria-label="Stencil shape preset"
+              className="segmented-control"
+              style={{ width: '100%', marginBottom: '1.25rem' }}
+            >
+              {(['text', 'heart', 'invader', 'zigzag'] as const).map(shape => {
+                const isSelected = selectedStencilShape === shape;
+                return (
+                  <button
+                    key={shape}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => setSelectedStencilShape(shape)}
+                    className={`segmented-control-item ${isSelected ? 'is-active' : ''}`}
+                    style={{ flex: 1, textTransform: 'capitalize', fontSize: '0.8rem' }}
+                  >
+                    {shape}
+                  </button>
+                );
+              })}
             </div>
 
             {selectedStencilShape === 'text' && (
               <div style={{ marginBottom: '1.25rem' }}>
-                <label className="form-label">
+                <label className="form-label" htmlFor="stencil-text-input">
                   Text to Stamp (A-Z, 0-9, ! + -):
                 </label>
                 <input
+                  id="stencil-text-input"
                   type="text"
                   maxLength={10}
                   value={stencilText}
@@ -610,11 +595,12 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             )}
 
             <div style={{ marginBottom: '1.5rem' }}>
-              <label className="form-label">
+              <label className="form-label" htmlFor="stencil-offset-slider">
                 <span>Start Week Offset (Column 0 to 45):</span>
                 <span className="mono" style={{ color: 'var(--emerald-400)' }}>Week {stencilOffset}</span>
               </label>
               <input
+                id="stencil-offset-slider"
                 type="range"
                 min={0}
                 max={45}
