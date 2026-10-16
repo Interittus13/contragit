@@ -105,6 +105,11 @@ export default function DashboardPage() {
   const [showProgressModal, setShowProgressModal] = useState<boolean>(false);
   const [startingJob, setStartingJob] = useState<boolean>(false);
 
+  // Original GitHub contributions & protection
+  const [existingContributions, setExistingContributions] = useState<Record<string, number>>({});
+  const [protectExisting, setProtectExisting] = useState<boolean>(true);
+  const [loadingContributions, setLoadingContributions] = useState<boolean>(false);
+
   const isPausedRef = useRef<boolean>(false);
   const cancelRef = useRef<boolean>(false);
   const batchStateRef = useRef<{
@@ -131,6 +136,7 @@ export default function DashboardPage() {
           setRepoOwner(data.user.login);
           setLoadingAuth(false);
           loadRepositories();
+          loadContributions();
         } else {
           router.replace('/auth');
         }
@@ -160,6 +166,21 @@ export default function DashboardPage() {
     }
   };
 
+  const loadContributions = async () => {
+    setLoadingContributions(true);
+    try {
+      const res = await fetch('/api/contributions');
+      const data = await res.json();
+      if (data.success && data.contributions) {
+        setExistingContributions(data.contributions);
+      }
+    } catch (err) {
+      console.warn('Failed to load contributions:', err);
+    } finally {
+      setLoadingContributions(false);
+    }
+  };
+
   const handleSelectRepo = (repoName: string) => {
     setSelectedRepo(repoName);
     const found = repositories.find((r) => r.name === repoName);
@@ -185,10 +206,15 @@ export default function DashboardPage() {
     return Object.values(customMatrix).filter(c => (c || 0) > 0).length;
   }, [customMatrix]);
 
+  const originalActiveDays = useMemo(() => {
+    return Object.keys(existingContributions).filter(d => (existingContributions[d] || 0) > 0).length;
+  }, [existingContributions]);
+
   // Pre-flight calculation
   const handleCalculateSchedule = async () => {
     setCalculating(true);
     try {
+      const lockedDates = Object.keys(existingContributions).filter(d => (existingContributions[d] || 0) > 0);
       const res = await fetch('/api/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,12 +228,15 @@ export default function DashboardPage() {
           pushToRemote,
           weekdayCounts,
           customMatrix,
+          lockedDates,
+          protectExisting,
         }),
       });
 
       const data = await res.json();
-      if (data.success && data.calculation) {
-        setCalculation(data.calculation);
+      const calcResult = data.calculation || data;
+      if (data.success && calcResult) {
+        setCalculation(calcResult);
         setShowSummaryModal(true);
       } else {
         alert(data.message || 'Failed to calculate schedule');
@@ -333,6 +362,7 @@ export default function DashboardPage() {
     setShowProgressModal(true);
 
     try {
+      const lockedDates = Object.keys(existingContributions).filter(d => (existingContributions[d] || 0) > 0);
       const config = {
         mode: activeMode,
         startDate,
@@ -346,6 +376,8 @@ export default function DashboardPage() {
         messageStyle,
         customMessagePrefix,
         languageConfig,
+        lockedDates,
+        protectExisting,
       };
 
       const timestamps = scheduleEngine.generateCommitTimestamps(config);
@@ -482,6 +514,14 @@ export default function DashboardPage() {
 
           {/* Desktop Summary Pill */}
           <div className="cluster" style={{ gap: '0.65rem' }}>
+            {protectExisting && originalActiveDays > 0 && (
+              <div className="stat-pill" style={{ borderColor: 'rgba(6, 182, 212, 0.4)', background: 'rgba(6, 182, 212, 0.08)' }}>
+                <span className="stat-pill-label" style={{ color: 'var(--cyan-400)' }}>🔒 Preserved</span>
+                <span className="stat-pill-val" style={{ color: 'var(--cyan-400)' }}>
+                  {originalActiveDays} days
+                </span>
+              </div>
+            )}
             <div className="stat-pill">
               <span className="stat-pill-label">Active Days</span>
               <span className="stat-pill-val" style={{ color: 'var(--emerald-400)' }}>
@@ -521,6 +561,9 @@ export default function DashboardPage() {
                 <HeatmapCanvas
                   matrix={customMatrix}
                   onChange={(m) => setCustomMatrix(m)}
+                  existingContributions={existingContributions}
+                  protectExisting={protectExisting}
+                  onToggleProtectExisting={setProtectExisting}
                 />
               </section>
             ) : (
@@ -715,6 +758,14 @@ export default function DashboardPage() {
                 <span style={{ color: 'var(--text-muted)' }}>Commits to Author:</span>
                 <strong style={{ color: 'var(--emerald-400)', fontSize: '1rem' }}>{calculation.totalCommits} commits</strong>
               </div>
+              {calculation.protectedDays && calculation.protectedDays > 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Original Activity:</span>
+                  <span className="mono" style={{ color: 'var(--cyan-400)', fontWeight: 600 }}>
+                    🔒 {calculation.protectedDays} days preserved
+                  </span>
+                </div>
+              ) : null}
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--text-muted)' }}>Execution Pipeline:</span>
                 <span className="mono" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>

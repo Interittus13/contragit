@@ -25,6 +25,8 @@ export interface ScheduleConfig {
   messageStyle?: CommitMessageStyle;
   customMessagePrefix?: string;
   languageConfig?: TargetLanguageConfig;
+  lockedDates?: string[];
+  protectExisting?: boolean;
 }
 
 export interface ScheduleCalculation {
@@ -34,6 +36,7 @@ export interface ScheduleCalculation {
   totalCommits: number;
   dailyBreakdown: WeekdayCounts;
   estimatedSeconds: number;
+  protectedDays?: number;
 }
 
 export interface CommitJob {

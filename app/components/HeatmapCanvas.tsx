@@ -10,14 +10,19 @@ import {
   Shuffle, 
   Check, 
   Hand, 
-  X 
+  X,
+  ShieldCheck,
+  ShieldAlert
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
 
-interface HeatmapCanvasProps {
+export interface HeatmapCanvasProps {
   matrix: CustomCommitMatrix;
   onChange: (matrix: CustomCommitMatrix) => void;
+  existingContributions?: Record<string, number>;
+  protectExisting?: boolean;
+  onToggleProtectExisting?: (protect: boolean) => void;
 }
 
 const LEVEL_COLORS: Record<number, string> = {
@@ -26,6 +31,14 @@ const LEVEL_COLORS: Record<number, string> = {
   2: '#006d32', // Medium (3 commits)
   3: '#26a641', // High (6 commits)
   4: '#39d353', // Ultra (10 commits)
+};
+
+const EXISTING_LEVEL_COLORS: Record<number, string> = {
+  0: '#161b22',
+  1: 'rgba(6, 182, 212, 0.40)', // Cyan 500 subtle
+  2: 'rgba(6, 182, 212, 0.65)', // Cyan 500 medium
+  3: 'rgba(14, 165, 233, 0.85)', // Sky 500 strong
+  4: '#06b6d4',                  // Cyan 500 full glow
 };
 
 const LEVEL_COMMITS: Record<number, number> = {
@@ -39,11 +52,23 @@ const LEVEL_COMMITS: Record<number, number> = {
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
+export function HeatmapCanvas({ 
+  matrix, 
+  onChange,
+  existingContributions = {},
+  protectExisting = true,
+  onToggleProtectExisting
+}: HeatmapCanvasProps) {
   const [selectedBrush, setSelectedBrush] = useState<number>(3); // default Level 3
   const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
   const [touchMode, setTouchMode] = useState<'draw' | 'pan'>('draw');
-  const [hoveredCell, setHoveredCell] = useState<{ date: string; day: string; count: number; level: number } | null>(null);
+  const [hoveredCell, setHoveredCell] = useState<{ 
+    date: string; 
+    day: string; 
+    count: number; 
+    level: number;
+    isProtected?: boolean;
+  } | null>(null);
 
   // Responsive full-width container tracking
   const containerRef = useRef<HTMLDivElement>(null);
@@ -110,14 +135,20 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
   }, []);
 
   const paintCell = useCallback((dateStr: string, level: number) => {
+    if (protectExisting && (existingContributions[dateStr] || 0) > 0) {
+      return; // Cell is protected with existing contributions
+    }
     const count = LEVEL_COMMITS[level] || 0;
     onChange({
       ...matrix,
       [dateStr]: count,
     });
-  }, [matrix, onChange]);
+  }, [matrix, onChange, protectExisting, existingContributions]);
 
   const handleCellPointerDown = (dateStr: string) => {
+    if (protectExisting && (existingContributions[dateStr] || 0) > 0) {
+      return; // Do not paint on protected cell
+    }
     setIsMouseDown(true);
     if (touchMode === 'draw') {
       paintCell(dateStr, selectedBrush);
@@ -125,6 +156,9 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
   };
 
   const handleCellPointerEnter = (dateStr: string) => {
+    if (protectExisting && (existingContributions[dateStr] || 0) > 0) {
+      return; // Do not paint on protected cell
+    }
     if (isMouseDown && touchMode === 'draw') {
       paintCell(dateStr, selectedBrush);
     }
@@ -138,6 +172,9 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
     const newMatrix: CustomCommitMatrix = {};
     calendarGrid.forEach(week => {
       week.forEach(cell => {
+        if (protectExisting && (existingContributions[cell.dateStr] || 0) > 0) {
+          return; // Skip protected cells
+        }
         const curCount = matrix[cell.dateStr] || 0;
         newMatrix[cell.dateStr] = curCount > 0 ? 0 : LEVEL_COMMITS[selectedBrush || 3];
       });
@@ -149,6 +186,9 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
     const newMatrix: CustomCommitMatrix = {};
     calendarGrid.forEach(week => {
       week.forEach(cell => {
+        if (protectExisting && (existingContributions[cell.dateStr] || 0) > 0) {
+          return; // Skip protected cells
+        }
         const isWeekend = cell.dayIndex === 0 || cell.dayIndex === 6;
         const chance = isWeekend ? 0.2 : 0.65;
         if (Math.random() < chance) {
@@ -183,6 +223,9 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
         if (weekIdx < 52 && calendarGrid[weekIdx]) {
           const cell = calendarGrid[weekIdx][r];
           if (cell) {
+            if (protectExisting && (existingContributions[cell.dateStr] || 0) > 0) {
+              continue; // Do not overwrite protected cells with stencil
+            }
             const isFilled = rows[r]?.[c];
             if (isFilled) {
               newMatrix[cell.dateStr] = LEVEL_COMMITS[selectedBrush || 3];
@@ -313,6 +356,30 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             {touchMode === 'draw' ? <Brush size={13} color="var(--emerald-400)" /> : <Hand size={13} />}
             <span>{touchMode === 'draw' ? 'Draw Mode' : 'Pan Mode'}</span>
           </button>
+
+          {/* Protect Original Contributions Toggle */}
+          {onToggleProtectExisting && (
+            <button
+              type="button"
+              onClick={() => onToggleProtectExisting(!protectExisting)}
+              className={`btn btn-sm ${protectExisting ? 'btn-secondary' : 'btn-ghost'}`}
+              style={{
+                fontSize: '0.75rem',
+                padding: '0.4rem 0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                border: protectExisting ? '1px solid rgba(6, 182, 212, 0.4)' : undefined,
+                background: protectExisting ? 'rgba(6, 182, 212, 0.12)' : undefined,
+                color: protectExisting ? 'var(--cyan-400)' : 'var(--text-secondary)',
+              }}
+              title="Protect original GitHub contributions from being overwritten"
+              aria-label={`Toggle protection of existing contributions, current: ${protectExisting ? 'active' : 'inactive'}`}
+            >
+              {protectExisting ? <ShieldCheck size={13} color="var(--cyan-400)" /> : <ShieldAlert size={13} />}
+              <span>{protectExisting ? 'Original Protected' : 'Protection Off'}</span>
+            </button>
+          )}
 
           {/* Stencil */}
           <Button
@@ -452,12 +519,31 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
                   }}
                 >
                   {week.map((cell) => {
-                    const count = matrix[cell.dateStr] || 0;
+                    const originalCount = existingContributions[cell.dateStr] || 0;
+                    const isCellProtected = Boolean(protectExisting && originalCount > 0);
+                    const count = isCellProtected ? originalCount : (matrix[cell.dateStr] || 0);
+
                     let level = 0;
                     if (count >= 10) level = 4;
                     else if (count >= 6) level = 3;
                     else if (count >= 3) level = 2;
                     else if (count > 0) level = 1;
+
+                    const cellBg = isCellProtected
+                      ? EXISTING_LEVEL_COLORS[level]
+                      : LEVEL_COLORS[level];
+
+                    const cellBorder = isCellProtected
+                      ? '1px solid rgba(6, 182, 212, 0.45)'
+                      : level > 0
+                        ? '1px solid rgba(255, 255, 255, 0.16)'
+                        : '1px solid rgba(255, 255, 255, 0.04)';
+
+                    const cellCursor = isCellProtected
+                      ? 'not-allowed'
+                      : touchMode === 'draw'
+                        ? 'crosshair'
+                        : 'default';
 
                     return (
                       <div
@@ -465,23 +551,29 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
                         data-date={cell.dateStr}
                         role="button"
                         tabIndex={-1}
-                        aria-label={`${cell.dateStr}: ${count} commits`}
+                        aria-label={`${cell.dateStr}: ${count} ${isCellProtected ? 'original' : 'planned'} commits`}
                         onPointerDown={() => {
-                          handleCellPointerDown(cell.dateStr);
+                          if (!isCellProtected) {
+                            handleCellPointerDown(cell.dateStr);
+                          }
                           setHoveredCell({
                             date: cell.dateStr,
                             day: DAY_LABELS[cell.dayIndex],
-                            count: LEVEL_COMMITS[selectedBrush] ?? count,
-                            level: selectedBrush,
+                            count: isCellProtected ? originalCount : (LEVEL_COMMITS[selectedBrush] ?? count),
+                            level: isCellProtected ? level : selectedBrush,
+                            isProtected: isCellProtected,
                           });
                         }}
                         onPointerEnter={() => {
-                          handleCellPointerEnter(cell.dateStr);
+                          if (!isCellProtected) {
+                            handleCellPointerEnter(cell.dateStr);
+                          }
                           setHoveredCell({
                             date: cell.dateStr,
                             day: DAY_LABELS[cell.dayIndex],
                             count,
                             level,
+                            isProtected: isCellProtected,
                           });
                         }}
                         onPointerLeave={() => {
@@ -493,9 +585,10 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
                           width: `${cellSize}px`,
                           height: `${cellSize}px`,
                           borderRadius: '2.5px',
-                          backgroundColor: LEVEL_COLORS[level],
-                          border: level > 0 ? '1px solid rgba(255, 255, 255, 0.16)' : '1px solid rgba(255, 255, 255, 0.04)',
-                          cursor: touchMode === 'draw' ? 'crosshair' : 'default',
+                          backgroundColor: cellBg,
+                          border: cellBorder,
+                          cursor: cellCursor,
+                          boxShadow: isCellProtected && level >= 3 ? '0 0 6px rgba(6, 182, 212, 0.35)' : 'none',
                           transition: 'transform 0.08s var(--spring-ease), background-color 0.12s ease',
                           touchAction: touchMode === 'draw' ? 'none' : 'auto',
                         }}
@@ -533,9 +626,15 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
             Inspecting:
           </span>
           {hoveredCell ? (
-            <Badge variant="emerald">
-              {hoveredCell.date} ({hoveredCell.day}) • {hoveredCell.count} commits (L{hoveredCell.level})
-            </Badge>
+            hoveredCell.isProtected ? (
+              <Badge variant="cyan">
+                🔒 {hoveredCell.date} ({hoveredCell.day}) • {hoveredCell.count} original commits (Protected)
+              </Badge>
+            ) : (
+              <Badge variant="emerald">
+                {hoveredCell.date} ({hoveredCell.day}) • {hoveredCell.count} commits (L{hoveredCell.level})
+              </Badge>
+            )
           ) : (
             <span style={{ color: 'var(--text-disabled)', fontFamily: 'var(--font-mono)' }}>
               Hover or tap any square
@@ -544,22 +643,39 @@ export function HeatmapCanvas({ matrix, onChange }: HeatmapCanvasProps) {
         </div>
 
         {/* Legend */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.75rem' }}>
-          <span>Less</span>
-          {[0, 1, 2, 3, 4].map(lv => (
-            <span
-              key={lv}
-              style={{
-                width: '11px',
-                height: '11px',
-                borderRadius: '2px',
-                backgroundColor: LEVEL_COLORS[lv],
-                display: 'inline-block',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-              }}
-            />
-          ))}
-          <span>More</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.9rem', color: 'var(--text-muted)', fontSize: '0.75rem', flexWrap: 'wrap' }}>
+          {protectExisting && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <span
+                style={{
+                  width: '11px',
+                  height: '11px',
+                  borderRadius: '2px',
+                  backgroundColor: EXISTING_LEVEL_COLORS[3],
+                  display: 'inline-block',
+                  border: '1px solid rgba(6, 182, 212, 0.5)',
+                }}
+              />
+              <span style={{ color: 'var(--cyan-400)', fontWeight: 600 }}>Original (Protected)</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span>Less</span>
+            {[0, 1, 2, 3, 4].map(lv => (
+              <span
+                key={lv}
+                style={{
+                  width: '11px',
+                  height: '11px',
+                  borderRadius: '2px',
+                  backgroundColor: LEVEL_COLORS[lv],
+                  display: 'inline-block',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                }}
+              />
+            ))}
+            <span>More</span>
+          </div>
         </div>
       </div>
 

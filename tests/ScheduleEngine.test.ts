@@ -135,5 +135,45 @@ describe('ScheduleEngine', () => {
 
       expect(timestamps).toHaveLength(5);
     });
+
+    it('skips protected dates with existing contributions', () => {
+      const timestamps = engine.generateCommitTimestamps({
+        startDate: '2024-01-01',
+        endDate: '2024-01-03',
+        weekdayCounts: {
+          monday: 3,
+          tuesday: 3,
+          wednesday: 3,
+          thursday: 0,
+          friday: 0,
+          saturday: 0,
+          sunday: 0,
+        },
+        lockedDates: ['2024-01-02'],
+        protectExisting: true,
+      });
+
+      // Monday (3) + Tuesday (0 skipped) + Wednesday (3) = 6
+      expect(timestamps).toHaveLength(6);
+      const dates = timestamps.map(t => t.toISOString().split('T')[0]);
+      expect(dates).not.toContain('2024-01-02');
+    });
+
+    it('skips protected dates in canvas mode as well', () => {
+      const timestamps = engine.generateCommitTimestamps({
+        startDate: '',
+        endDate: '',
+        mode: 'canvas',
+        customMatrix: {
+          '2024-05-10': 3,
+          '2024-05-11': 2,
+        },
+        lockedDates: ['2024-05-11'],
+        protectExisting: true,
+      });
+
+      expect(timestamps).toHaveLength(3);
+    });
   });
 });
+

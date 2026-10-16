@@ -307,6 +307,72 @@ export class GitHubApiClient {
       accessToken
     );
   }
+
+  public async fetchContributionCalendar(
+    username: string,
+    accessToken?: string
+  ): Promise<Record<string, number>> {
+    const query = `
+      query($login: String!) {
+        user(login: $login) {
+          contributionsCollection {
+            contributionCalendar {
+              totalContributions
+              weeks {
+                contributionDays {
+                  date
+                  contributionCount
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    try {
+      const res = await this.request<{
+        data?: {
+          user?: {
+            contributionsCollection?: {
+              contributionCalendar?: {
+                weeks?: Array<{
+                  contributionDays?: Array<{
+                    date: string;
+                    contributionCount: number;
+                  }>;
+                }>;
+              };
+            };
+          };
+        };
+        errors?: Array<{ message: string }>;
+      }>(
+        'https://api.github.com/graphql',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, variables: { login: username } }),
+        },
+        accessToken
+      );
+
+      const contributionMap: Record<string, number> = {};
+      const weeks = res.data?.user?.contributionsCollection?.contributionCalendar?.weeks || [];
+      for (const week of weeks) {
+        if (!week.contributionDays) continue;
+        for (const day of week.contributionDays) {
+          if (day.date && day.contributionCount > 0) {
+            contributionMap[day.date] = day.contributionCount;
+          }
+        }
+      }
+      return contributionMap;
+    } catch (err) {
+      console.warn(`[GitHubApiClient] Failed to fetch contribution calendar via GraphQL for ${username}:`, err);
+      return {};
+    }
+  }
 }
 
 export const gitHubApiClient = new GitHubApiClient();
