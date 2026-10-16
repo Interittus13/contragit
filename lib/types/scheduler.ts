@@ -1,3 +1,5 @@
+import { TargetLanguageConfig } from './language';
+
 export type Weekday = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
 export type WeekdayCounts = Record<Weekday, number>;
@@ -22,6 +24,7 @@ export interface ScheduleConfig {
   customMatrix?: CustomCommitMatrix;
   messageStyle?: CommitMessageStyle;
   customMessagePrefix?: string;
+  languageConfig?: TargetLanguageConfig;
 }
 
 export interface ScheduleCalculation {
@@ -68,6 +71,7 @@ export interface CommitBatchRequest {
   batchIndex: number;
   totalCommits: number;
   commits: CommitBatchItem[];
+  languageConfig?: TargetLanguageConfig;
 }
 
 export interface CommitBatchResponse {

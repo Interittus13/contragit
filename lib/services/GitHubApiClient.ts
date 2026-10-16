@@ -114,7 +114,7 @@ export class GitHubApiClient {
   }
 
   public async getAuthenticatedUser(accessToken: string): Promise<GitHubUser> {
-    const user = await this.request<{ id: number; login: string; email?: string | null }>('/user', {}, accessToken);
+    const user = await this.request<{ id: number; login: string; email?: string | null; avatar_url?: string }>('/user', {}, accessToken);
     let email = user.email || null;
 
     if (!email) {
@@ -138,6 +138,7 @@ export class GitHubApiClient {
       id: user.id,
       email,
       accessToken,
+      avatarUrl: user.avatar_url || `https://github.com/${user.login}.png?size=80`,
     };
   }
 

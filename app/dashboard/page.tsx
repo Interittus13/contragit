@@ -36,6 +36,8 @@ import { Badge } from '@/app/components/ui/Badge';
 import { Card } from '@/app/components/ui/Card';
 
 import { HeatmapCanvas } from '@/app/components/HeatmapCanvas';
+import { TargetLanguageConfig } from '@/lib/types/language';
+import { LanguageSelectorCard } from '@/app/components/studio/LanguageSelectorCard';
 import { TargetRepoCard } from '@/app/components/studio/TargetRepoCard';
 import { CommitStyleCard } from '@/app/components/studio/CommitStyleCard';
 import { QuickRulesCard } from '@/app/components/studio/QuickRulesCard';
@@ -69,6 +71,12 @@ export default function DashboardPage() {
   // Commit Message Customization
   const [messageStyle, setMessageStyle] = useState<CommitMessageStyle>('conventional');
   const [customMessagePrefix, setCustomMessagePrefix] = useState<string>('feat: ContraGit update');
+
+  // Target Language & Linguist Masquerade Configuration
+  const [languageConfig, setLanguageConfig] = useState<TargetLanguageConfig>({
+    mode: 'preset',
+    preset: 'fullstack',
+  });
 
   // Weekday counts for Quick Rules mode
   const [weekdayCounts, setWeekdayCounts] = useState<WeekdayCounts>({
@@ -259,6 +267,7 @@ export default function DashboardPage() {
             batchIndex: Math.floor(i / BATCH_SIZE),
             totalCommits: allCommits.length,
             commits: batch,
+            languageConfig,
           }),
         });
 
@@ -336,6 +345,7 @@ export default function DashboardPage() {
         customMatrix,
         messageStyle,
         customMessagePrefix,
+        languageConfig,
       };
 
       const timestamps = scheduleEngine.generateCommitTimestamps(config);
@@ -530,7 +540,13 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* STEP 3: Configuration & Deploy Center (Balanced 2-Column Responsive Grid) */}
+          {/* STEP 3: Target Language & Linguist Masquerade Generator */}
+          <LanguageSelectorCard
+            config={languageConfig}
+            onChange={setLanguageConfig}
+          />
+
+          {/* STEP 4: Configuration & Deploy Center (Balanced 2-Column Responsive Grid) */}
           <div className="studio-config-grid">
             {/* Left Column: Commit Message Styling */}
             <CommitStyleCard

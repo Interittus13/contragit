@@ -11,6 +11,7 @@ export class SessionManager {
       id: user.id,
       email: user.email,
       accessToken: user.accessToken,
+      avatarUrl: user.avatarUrl || `https://github.com/${user.login}.png?size=80`,
       repoOwner: user.repoOwner || null,
       repoName: user.repoName || null,
       issuedAt: Date.now(),
@@ -40,6 +41,7 @@ export class SessionManager {
         id: json.id || null,
         email: json.email || null,
         accessToken: json.accessToken,
+        avatarUrl: json.avatarUrl || `https://github.com/${json.login}.png?size=80`,
         repoOwner: json.repoOwner || null,
         repoName: json.repoName || null,
       };

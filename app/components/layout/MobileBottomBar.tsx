@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
 
 export interface MobileBottomBarProps {
@@ -17,28 +17,31 @@ export function MobileBottomBar({
   onDeploy,
   disabled = false,
 }: MobileBottomBarProps) {
+  const isDeployable = !disabled && totalCommits > 0;
+
   return (
     <nav
       className="mobile-sticky-bar"
       aria-label="Mobile deployment actions"
     >
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-          <span
-            style={{
-              fontSize: '1.1rem',
-              fontWeight: 800,
-              color: 'var(--emerald-400)',
-              fontFamily: 'var(--font-mono)',
-              lineHeight: 1.1,
-            }}
-          >
+      <div className="mobile-sticky-bar__metrics">
+        <div className="mobile-sticky-bar__commits">
+          <span className="mobile-sticky-bar__count">
             {totalCommits}
           </span>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>commits</span>
+          <span className="mobile-sticky-bar__label">
+            {totalCommits === 1 ? 'commit' : 'commits'}
+          </span>
+          {isDeployable && (
+            <span
+              className="status-dot-active"
+              title="Ready to deploy"
+              style={{ width: '7px', height: '7px' }}
+            />
+          )}
         </div>
-        <span style={{ fontSize: '0.7rem', color: 'var(--text-disabled)', fontFamily: 'var(--font-mono)' }}>
-          {activeDays} active days
+        <span className="mobile-sticky-bar__subtitle">
+          {activeDays} {activeDays === 1 ? 'active day' : 'active days'} queued
         </span>
       </div>
 
@@ -46,9 +49,11 @@ export function MobileBottomBar({
         variant="primary"
         size="md"
         onClick={onDeploy}
-        disabled={disabled || totalCommits === 0}
+        disabled={!isDeployable}
         iconRight={<ArrowRight size={15} />}
+        className="interactive"
         style={{ padding: '0.65rem 1.35rem' }}
+        aria-label={`Deploy ${totalCommits} commits across ${activeDays} active days`}
       >
         Deploy
       </Button>

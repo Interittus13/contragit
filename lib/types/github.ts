@@ -3,6 +3,7 @@ export interface GitHubUser {
   id: number | null;
   email: string | null;
   accessToken: string;
+  avatarUrl?: string | null;
   repoOwner?: string | null;
   repoName?: string | null;
 }
