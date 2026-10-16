@@ -4,7 +4,7 @@ export type Weekday = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'
 
 export type WeekdayCounts = Record<Weekday, number>;
 
-export type FilterPreset = 'all' | 'even' | 'odd' | 'custom';
+export type FilterPreset = 'all' | 'even' | 'odd' | 'custom' | 'random';
 export type FilterOption = 'min' | 'max';
 
 export type CustomCommitMatrix = Record<string, number>; // key: YYYY-MM-DD -> commit count (0..20)

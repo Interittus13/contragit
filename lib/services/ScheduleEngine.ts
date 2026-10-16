@@ -65,8 +65,9 @@ export class ScheduleEngine {
         match = dayNum !== 0 && dayNum % 2 === 0;
       } else if (preset === 'odd') {
         match = dayNum === 0 || dayNum % 2 === 1;
-      } else if (preset === 'custom') {
-        result[day] = Math.floor(Math.random() * 6);
+      } else if (preset === 'random' || preset === 'custom') {
+        const ceiling = option === 'min' ? 5 : 10;
+        result[day] = Math.floor(Math.random() * (ceiling + 1));
         return;
       }
 
