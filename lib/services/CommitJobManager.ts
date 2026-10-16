@@ -7,6 +7,7 @@ import {
 } from '../types/scheduler';
 import { GitHubApiClient } from './GitHubApiClient';
 import { ScheduleEngine } from './ScheduleEngine';
+import { languageMasqueradeEngine } from './LanguageMasqueradeEngine';
 
 export class CommitJobManager {
   private jobs: Map<string, CommitJob> = new Map();
@@ -128,18 +129,25 @@ export class CommitJobManager {
           commitMsg = `${randomMsg} [contra-#${commitNum}]`;
         }
 
+        // Generate language-specific code file via Linguist Masquerade Engine
+        const generatedFile = languageMasqueradeEngine.generateFileForCommit(
+          commitNum,
+          isoString,
+          config.languageConfig
+        );
+
         // Create blob
         const blob = await gitClient.createBlob(
           owner,
           repo,
-          `ContraGit automation checkpoint: ${commitNum} on ${isoString}\n`,
+          generatedFile.content,
           user.accessToken
         );
 
         // Create tree
         const treeItems: GitTreeItem[] = [
           {
-            path: `contra_log_${commitNum}.txt`,
+            path: generatedFile.path,
             mode: '100644',
             type: 'blob',
             sha: blob.sha,
@@ -265,18 +273,25 @@ export class CommitJobManager {
         await new Promise(resolve => setTimeout(resolve, 150));
       }
 
+      // Generate language-specific code file via Linguist Masquerade Engine
+      const generatedFile = languageMasqueradeEngine.generateFileForCommit(
+        item.fileIndex,
+        item.timestamp,
+        request.languageConfig
+      );
+
       // Create blob
       const blob = await gitClient.createBlob(
         owner,
         repo,
-        `ContraGit automation checkpoint: ${item.fileIndex} on ${item.timestamp}\n`,
+        generatedFile.content,
         user.accessToken
       );
 
       // Create tree
       const treeItems: GitTreeItem[] = [
         {
-          path: `contra_log_${item.fileIndex}.txt`,
+          path: generatedFile.path,
           mode: '100644',
           type: 'blob',
           sha: blob.sha,
