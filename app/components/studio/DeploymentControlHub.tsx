@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { 
   Play, 
   Pause, 
@@ -11,11 +10,7 @@ import {
   Sparkles, 
   GitCommit, 
   Rocket, 
-  AlertTriangle,
-  Layers,
-  Calendar,
-  Lock,
-  Code
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/app/components/ui/Button';
 import { Badge } from '@/app/components/ui/Badge';
@@ -362,6 +357,14 @@ export function DeploymentControlHub({
                 {calculation.repository} ({branch})
               </code>
             </div>
+            {languageConfig && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Linguist Target:</span>
+                <span className="mono" style={{ color: 'var(--emerald-400)', fontSize: '0.785rem' }}>
+                  {languageConfig.mode === 'preset' ? (languageConfig.preset || 'fullstack') : (languageConfig.language || 'typescript')}
+                </span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
               <span style={{ color: 'var(--text-muted)' }}>Date Coverage:</span>
               <span className="mono" style={{ fontSize: '0.785rem' }}>{calculation.dateRange}</span>

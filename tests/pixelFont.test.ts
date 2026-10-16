@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { renderTextToPixelMatrix, PIXEL_FONT, STENCILS } from '../lib/utils/pixelFont';
+import { renderTextToPixelMatrix, STENCILS } from '../lib/utils/pixelFont';
 
 describe('pixelFont', () => {
   it('renders standard letters into 7-row boolean matrix', () => {

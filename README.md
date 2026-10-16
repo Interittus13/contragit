@@ -1,6 +1,10 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Interittus13/gitcontra/main/app/favicon.ico" alt="ContraGit Logo" width="64" height="64" onerror="this.style.display='none'"/>
-  <h1>⚡ ContraGit</h1>
+  <a href="https://github.com/Interittus13/gitcontra">
+    <img src="public/contragit-banner.png" alt="ContraGit Banner" width="100%" />
+  </a>
+
+  <br/><br/>
+
   <p><strong>Architect Your GitHub Profile • Precision Contribution Scheduling & Git Activity Studio</strong></p>
 
   <p>
@@ -173,42 +177,6 @@ npm run build
 
 # Run comprehensive CI pre-flight suite
 npm run check
-```
-
----
-
-## 📁 Repository Structure
-
-```
-gitcontra/
-├── .github/                     # GitHub workflows and issue/PR templates
-│   ├── ISSUE_TEMPLATE/          # Bug report & feature request templates
-│   ├── workflows/               # CI and PR Semantic Lint workflows
-│   └── PULL_REQUEST_TEMPLATE.md # Standard PR checklist and guidelines
-├── app/                         # Next.js 16 App Router application
-│   ├── api/                     # Serverless Route Handlers
-│   │   ├── auth/                # GitHub OAuth login, callback, status, logout
-│   │   ├── calculate/           # Commit distribution calculations
-│   │   ├── commit-batch/        # Atomic Git Data API micro-batch authoring
-│   │   ├── repos/               # Repository list and validation
-│   │   └── social-actions/      # Star & follow helpers
-│   ├── auth/                    # Dedicated authentication view
-│   ├── components/              # UI components & Studio architecture
-│   │   ├── layout/              # AppHeader, MobileBottomBar
-│   │   ├── studio/              # TargetRepoCard, QuickRulesCard, CommitStyleCard
-│   │   ├── ui/                  # Button, Badge, Card, Tabs
-│   │   └── HeatmapCanvas.tsx    # 52-Week Interactive Matrix Studio Canvas
-│   ├── dashboard/               # Pro Studio workspace page
-│   ├── instructions/            # Architecture and usage documentation
-│   ├── globals.css              # Apple-inspired design tokens and layout primitives
-│   ├── layout.tsx               # Root layout & ambient backdrop
-│   └── page.tsx                 # Landing page with Live Interactive Stencil Studio
-├── extension/                   # Manifest V3 browser extension
-├── lib/                         # Core domain logic and client services
-│   ├── services/                # GitHubApiClient, ScheduleEngine, SessionManager
-│   ├── types/                   # TypeScript interfaces (github, scheduler)
-│   └── utils/                   # 5x7 PixelFont engine and stencil matrices
-└── tests/                       # Automated Vitest test suites
 ```
 
 ---

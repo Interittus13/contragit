@@ -1,11 +1,11 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, AlertCircle, KeyRound, Shield, Loader2, Lock } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Shield, Loader2, Lock } from 'lucide-react';
 import { GitHubIcon } from '@/app/components/GitHubIcon';
-import { Button } from '@/app/components/ui/Button';
 
 function AuthContent() {
   const router = useRouter();
@@ -46,23 +46,29 @@ function AuthContent() {
         margin: 'auto',
       }}
     >
-      {/* Icon Chip */}
+      {/* Brand Logo Chip */}
       <div
         style={{
-          width: '56px',
-          height: '56px',
+          width: '64px',
+          height: '64px',
           borderRadius: 'var(--radius-lg)',
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.1) 100%)',
-          color: 'var(--emerald-400)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          overflow: 'hidden',
           margin: '0 auto 1.5rem',
           boxShadow: '0 0 24px var(--emerald-glow)',
           border: '1px solid rgba(16, 185, 129, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        <KeyRound size={26} />
+        <Image
+          src="/contragit.png"
+          alt="ContraGit Logo"
+          width={64}
+          height={64}
+          priority
+          style={{ objectFit: 'cover' }}
+        />
       </div>
 
       <h1 style={{ fontSize: '1.75rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { 
   ArrowRight, 
@@ -10,8 +11,7 @@ import {
   ExternalLink, 
   LogOut, 
   Menu, 
-  X,
-  Sparkles
+  X
 } from 'lucide-react';
 import { GitHubUser } from '@/lib/types/github';
 import { GitHubIcon } from '@/app/components/GitHubIcon';
@@ -80,7 +80,14 @@ export function AppHeader({ user, activeNav = 'dashboard', defaultMobileOpen = f
           aria-label="ContraGit Home"
         >
           <div className="app-header__logo" aria-hidden="true">
-            ⚡
+            <Image
+              src="/contragit.png"
+              alt="ContraGit Logo"
+              width={36}
+              height={36}
+              priority
+              className="app-header__logo-img"
+            />
           </div>
           <div className="app-header__title-group">
             <span className="app-header__title">

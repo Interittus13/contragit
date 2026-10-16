@@ -248,7 +248,7 @@ export function determinant2x2(m: Matrix2D): number {
       path: 'src/utils/formatters.ts',
       language: 'TypeScript',
       template: {
-        scaffold: (c, t) => `/**
+        scaffold: (_c, t) => `/**
  * @file Data Formatters & Unit Conversions
  * @timestamp ${t}
  */
@@ -338,7 +338,7 @@ def detect_spikes(analyzer: TimeSeriesAnalyzer, threshold_sigma: float = 2.5) ->
       path: 'src/models/entities.py',
       language: 'Python',
       template: {
-        scaffold: (c, t) => `"""
+        scaffold: (_c, t) => `"""
 Entity Data Models & Validation
 Timestamp: ${t}
 """

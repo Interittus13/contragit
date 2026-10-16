@@ -1,21 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Compass,
-  GitCommit,
   Palette,
-  Play,
-  Sparkles,
   Sliders,
   Star,
   UserPlus
 } from 'lucide-react';
 
 import {
-  Weekday,
   WeekdayCounts,
   FilterPreset,
   FilterOption,
@@ -32,8 +26,6 @@ import { AppHeader } from '@/app/components/layout/AppHeader';
 import { MobileBottomBar } from '@/app/components/layout/MobileBottomBar';
 import { Tabs } from '@/app/components/ui/Tabs';
 import { Button } from '@/app/components/ui/Button';
-import { Badge } from '@/app/components/ui/Badge';
-import { Card } from '@/app/components/ui/Card';
 
 import { HeatmapCanvas } from '@/app/components/HeatmapCanvas';
 import { TargetLanguageConfig } from '@/lib/types/language';
@@ -108,7 +100,6 @@ export default function DashboardPage() {
   // Original GitHub contributions & protection
   const [existingContributions, setExistingContributions] = useState<Record<string, number>>({});
   const [protectExisting, setProtectExisting] = useState<boolean>(true);
-  const [loadingContributions, setLoadingContributions] = useState<boolean>(false);
 
   const isPausedRef = useRef<boolean>(false);
   const cancelRef = useRef<boolean>(false);
@@ -167,7 +158,6 @@ export default function DashboardPage() {
   };
 
   const loadContributions = async () => {
-    setLoadingContributions(true);
     try {
       const res = await fetch('/api/contributions');
       const data = await res.json();
@@ -176,8 +166,6 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.warn('Failed to load contributions:', err);
-    } finally {
-      setLoadingContributions(false);
     }
   };
 

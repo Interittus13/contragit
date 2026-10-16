@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { CustomCommitMatrix } from '@/lib/types/scheduler';
 import { renderTextToPixelMatrix, STENCILS } from '@/lib/utils/pixelFont';
 import { 

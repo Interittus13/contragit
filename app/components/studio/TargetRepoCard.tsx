@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { GitBranch, RefreshCw, Lock, FolderGit2, Search, PlusCircle, Check } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { GitBranch, RefreshCw, FolderGit2, Search } from 'lucide-react';
 import { Card } from '@/app/components/ui/Card';
 import { Badge } from '@/app/components/ui/Badge';
 import { GitHubRepository } from '@/lib/types/github';

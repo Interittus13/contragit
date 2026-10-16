@@ -1,6 +1,5 @@
-import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, CheckCircle2, GitBranch, KeyRound, Shield, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, GitBranch, Shield, Sparkles } from 'lucide-react';
 import { AppHeader } from '@/app/components/layout/AppHeader';
 import { Card } from '@/app/components/ui/Card';
 import { Badge } from '@/app/components/ui/Badge';
