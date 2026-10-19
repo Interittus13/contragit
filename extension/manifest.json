@@ -1,13 +1,48 @@
 {
   "manifest_version": 3,
-  "name": "ContraGit",
-  "version": "1.0.0",
-  "description": "GitHub contribution scheduler and activity automation engine.",
+  "name": "ContraGit — Precision GitHub Studio",
+  "version": "2.0.0",
+  "description": "Architect your GitHub profile. Precision contribution graph scheduler, streak maintenance, and Git activity studio.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "index.html",
-    "default_title": "Open ContraGit"
+    "default_title": "ContraGit Studio",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://github.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
   "host_permissions": [
-    "https://api.github.com/*"
+    "https://api.github.com/*",
+    "http://localhost:3000/*",
+    "https://*.vercel.app/*"
   ]
 }
