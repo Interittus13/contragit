@@ -3,221 +3,184 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard | ContraGit</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/extension/styles.css?v=5" />
+    <title>ContraGit Studio</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="grid-overlay"></div>
-    <div class="github-icons-bg" id="githubBg"></div>
-    
-    <div class="page-shell">
-      <header class="topbar">
-        <div class="brand-wrap">
-          <h1 class="brand-name"><span class="chrome">Contra</span>Git</h1>
-        </div>
-        <div class="user-info">
-          <span id="userSummary">Loading...</span>
-          <button class="ghost-button" id="signOutBtn" type="button">LOGOUT</button>
+    <div class="ext-container">
+      <!-- Header -->
+      <header class="ext-header">
+        <a href="https://github.com/Interittus13/gitcontra" target="_blank" class="brand-group" aria-label="ContraGit">
+          <img src="icons/icon32.png" alt="ContraGit Logo" class="brand-icon" />
+          <div class="brand-title">Contra<span>Git</span></div>
+        </a>
+        <div class="header-actions">
+          <a href="http://localhost:3000/dashboard" target="_blank" id="launchStudioLink" class="icon-btn" title="Open Full 52-Week Visual Canvas Studio">
+            Studio ↗
+          </a>
         </div>
       </header>
 
-      <main class="app-grid">
-        <!-- Scheduler Section -->
-        <section class="panel scheduler-panel" id="schedulerPanel">
-          <div class="panel-header">
-            <h2>SCHEDULE COMMITS</h2>
-            <span class="status-pill" id="connectionStatus">
-              <span class="pulse-dot"></span> Ready
+      <!-- Active User Card -->
+      <div class="user-status-card" id="userCard">
+        <div class="user-profile-info">
+          <img src="icons/icon32.png" alt="User Avatar" class="user-avatar" id="userAvatar" />
+          <div class="user-names">
+            <span class="user-login" id="userLogin">Not Connected</span>
+            <span class="user-badge" id="userBadge">
+              <span class="pulse-dot" style="background: var(--text-muted);"></span> Setup Token
+            </span>
+          </div>
+        </div>
+        <button type="button" class="icon-btn" id="toggleAuthBtn">⚙️ Config</button>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="nav-tabs">
+        <button type="button" class="tab-btn active" id="tabBtnSchedule" data-tab="schedule">⚡ Schedule Studio</button>
+        <button type="button" class="tab-btn" id="tabBtnSettings" data-tab="settings">⚙️ Settings & Token</button>
+      </div>
+
+      <!-- TAB 1: SCHEDULE STUDIO -->
+      <div id="tabContentSchedule" class="tab-content">
+        <form id="scheduleForm" class="card">
+          <!-- Target Repository Selection -->
+          <div class="two-col">
+            <div class="form-group">
+              <label class="form-label" for="repoSelect">REPOSITORY</label>
+              <select id="repoSelect" class="select" required>
+                <option value="" disabled selected>Select Repository...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="branchInput">TARGET BRANCH</label>
+              <input type="text" id="branchInput" class="input" value="main" required />
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="form-group">
+            <label class="form-label">DATE SPAN PRESETS</label>
+            <div class="preset-chips">
+              <button type="button" class="preset-chip active" data-span="30">Last 30 Days</button>
+              <button type="button" class="preset-chip" data-span="90">Last 90 Days</button>
+              <button type="button" class="preset-chip" data-span="year">Full Year</button>
+              <button type="button" class="preset-chip" data-span="custom">Custom</button>
+            </div>
+          </div>
+
+          <!-- Date Range Inputs -->
+          <div class="two-col">
+            <div class="form-group">
+              <label class="form-label" for="startDate">START DATE</label>
+              <input type="date" id="startDate" class="input" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="endDate">END DATE</label>
+              <input type="date" id="endDate" class="input" required />
+            </div>
+          </div>
+
+          <!-- Commits Per Weekday -->
+          <div class="form-group">
+            <label class="form-label">COMMITS PER WEEKDAY (0 - 5)</label>
+            <div class="weekday-grid">
+              <div class="weekday-item"><span class="weekday-label">MON</span><input type="number" min="0" max="5" value="3" class="weekday-input" data-weekday="monday" /></div>
+              <div class="weekday-item"><span class="weekday-label">TUE</span><input type="number" min="0" max="5" value="3" class="weekday-input" data-weekday="tuesday" /></div>
+              <div class="weekday-item"><span class="weekday-label">WED</span><input type="number" min="0" max="5" value="3" class="weekday-input" data-weekday="wednesday" /></div>
+              <div class="weekday-item"><span class="weekday-label">THU</span><input type="number" min="0" max="5" value="3" class="weekday-input" data-weekday="thursday" /></div>
+              <div class="weekday-item"><span class="weekday-label">FRI</span><input type="number" min="0" max="5" value="3" class="weekday-input" data-weekday="friday" /></div>
+              <div class="weekday-item"><span class="weekday-label">SAT</span><input type="number" min="0" max="5" value="0" class="weekday-input" data-weekday="saturday" /></div>
+              <div class="weekday-item"><span class="weekday-label">SUN</span><input type="number" min="0" max="5" value="0" class="weekday-input" data-weekday="sunday" /></div>
+            </div>
+          </div>
+
+          <!-- Language Masquerade -->
+          <div class="two-col">
+            <div class="form-group">
+              <label class="form-label" for="langSelect">LINGUIST MASQUERADE</label>
+              <select id="langSelect" class="select">
+                <option value="typescript" selected>TypeScript (.ts)</option>
+                <option value="python">Python (.py)</option>
+                <option value="go">Go (.go)</option>
+                <option value="rust">Rust (.rs)</option>
+                <option value="devops">DevOps (Terraform HCL)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="randomizeToggle">VARIATION</label>
+              <select id="randomizeToggle" class="select">
+                <option value="natural" selected>Natural (±1 variation)</option>
+                <option value="exact">Exact fixed tallies</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Deploy Trigger -->
+          <button type="submit" id="deployBtn" class="btn-primary">
+            🚀 Review & Deploy Commits
+          </button>
+        </form>
+
+        <!-- Inline Live Execution Progress Hub -->
+        <div id="progressHub" class="progress-hub hidden">
+          <div class="progress-header">
+            <strong id="progressTitle">Deploying Schedule...</strong>
+            <span id="progressPercent" style="font-family: var(--font-mono); color: var(--emerald-400);">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary);">
+            <span id="progressCounts">0 / 0 commits</span>
+            <span id="progressBatchText">Batch 0 of 0</span>
+          </div>
+          <div class="progress-controls" id="progressControls">
+            <button type="button" class="mini-btn" id="pauseResumeBtn">⏸ Pause</button>
+            <button type="button" class="mini-btn" id="stopBatchBtn" style="color: var(--danger-400);">⏹ Stop & Keep</button>
+          </div>
+          <div id="completionActions" class="hidden" style="margin-top: 0.25rem;">
+            <a href="#" target="_blank" id="viewOnGitHubBtn" class="btn-primary" style="text-decoration:none; margin-bottom: 0.4rem;">
+              View on GitHub ↗
+            </a>
+            <button type="button" class="btn-secondary" id="resetHubBtn">Author New Schedule</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: SETTINGS & TOKEN CONFIG -->
+      <div id="tabContentSettings" class="tab-content hidden">
+        <div class="card">
+          <div class="card-title">Authentication & Access</div>
+          
+          <div class="form-group">
+            <label class="form-label" for="patTokenInput">GITHUB PERSONAL ACCESS TOKEN (PAT)</label>
+            <input type="password" id="patTokenInput" class="input" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off" />
+            <span style="font-size: 10px; color: var(--text-muted);">
+              Requires classic token with <code>repo</code> scope to author Git Data commits.
+              <a href="https://github.com/settings/tokens/new?scopes=repo&description=ContraGit%20Extension" target="_blank" style="color: var(--cyan-400);">Generate Token on GitHub ↗</a>
             </span>
           </div>
 
-          <form id="commitForm">
-            <!-- Date Inputs -->
-            <div class="field-grid two-col">
-              <label>
-                START DATE
-                <div class="input-wrap">
-                  <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <input type="date" id="startDate" required />
-                </div>
-              </label>
-              <label>
-                END DATE
-                <div class="input-wrap">
-                  <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                  </svg>
-                  <input type="date" id="endDate" required />
-                </div>
-              </label>
-            </div>
+          <div class="form-group">
+            <label class="form-label" for="studioUrlInput">WEB STUDIO BRIDGE URL</label>
+            <input type="text" id="studioUrlInput" class="input" value="http://localhost:3000" placeholder="http://localhost:3000" />
+            <span style="font-size: 10px; color: var(--text-muted);">
+              Used for the "Open Studio" button and OAuth session synchronization.
+            </span>
+          </div>
 
-            <!-- Repository Inputs -->
-            <div class="field-grid two-col">
-              <label>
-                REPOSITORY OWNER
-                <div class="input-wrap">
-                  <input type="text" id="repoOwner" placeholder="username" required />
-                </div>
-              </label>
-              <label>
-                REPOSITORY
-                <div class="input-wrap">
-                  <select id="repoName" required>
-                    <option value="" disabled selected>Loading...</option>
-                  </select>
-                </div>
-              </label>
-            </div>
-
-            <!-- Branch Input -->
-            <label class="field-grid full">
-              TARGET BRANCH
-              <div class="input-wrap">
-                <input type="text" id="branch" value="main" required />
-              </div>
-            </label>
-
-            <!-- Filter Section -->
-            <!-- Weekday Table - Always Visible -->
-            <div class="weekday-table-section">
-              <label>COMMITS PER WEEKDAY</label>
-              <div class="day-grid">
-                <div class="mini-input"><span>MON</span><input type="number" min="0" max="5" value="5" data-weekday="monday" /></div>
-                <div class="mini-input"><span>TUE</span><input type="number" min="0" max="5" value="5" data-weekday="tuesday" /></div>
-                <div class="mini-input"><span>WED</span><input type="number" min="0" max="5" value="5" data-weekday="wednesday" /></div>
-                <div class="mini-input"><span>THU</span><input type="number" min="0" max="5" value="5" data-weekday="thursday" /></div>
-                <div class="mini-input"><span>FRI</span><input type="number" min="0" max="5" value="5" data-weekday="friday" /></div>
-                <div class="mini-input"><span>SAT</span><input type="number" min="0" max="5" value="0" data-weekday="saturday" /></div>
-                <div class="mini-input"><span>SUN</span><input type="number" min="0" max="5" value="0" data-weekday="sunday" /></div>
-              </div>
-            </div>
-
-            <!-- Filter Section -->
-            <div class="filter-section">
-              <label>QUICK FILTERS</label>
-              <div class="filter-buttons">
-                <button type="button" class="filter-btn active" data-filter="all">ALL DAYS</button>
-                <button type="button" class="filter-btn" data-filter="even">EVEN DAYS</button>
-                <button type="button" class="filter-btn" data-filter="odd">ODD DAYS</button>
-                <button type="button" class="filter-btn" data-filter="custom">RANDOM</button>
-              </div>
-
-              <!-- Min/Max Options -->
-              <div id="filterOptions" class="filter-buttons" style="margin-top: 12px;">
-                <button type="button" class="filter-btn active" data-option="min">MIN (1)</button>
-                <button type="button" class="filter-btn" data-option="max">MAX (5)</button>
-              </div>
-            </div>
-
-            <!-- Push Toggle -->
-            <div class="toggles">
-              <label class="toggle-switch-label">
-                <div class="toggle-switch">
-                  <input type="checkbox" id="pushToRemote" checked />
-                  <span class="slider"></span>
-                </div>
-                <span>PUSH TO REMOTE</span>
-              </label>
-            </div>
-
-            <!-- Generate Button -->
-            <button type="submit" class="primary-button" id="submitBtn">
-              GENERATE SCHEDULE
-            </button>
-          </form>
-
-          <!-- Result Panel -->
-          <div id="result" class="result hidden"></div>
-        </section>
-      </main>
-    </div>
-
-    <!-- Modals -->
-    <div class="modal-overlay" id="summaryModal">
-      <div class="modal-content">
-        <h3 class="modal-title">SCHEDULE SUMMARY</h3>
-        <div id="summaryContent"></div>
-        <div class="modal-actions">
-          <button type="button" class="ghost-button" id="editBtn">Back / Edit</button>
-          <button type="button" class="primary-button" id="confirmBtn" style="margin-top:0;">Confirm & Start</button>
+          <button type="button" id="saveSettingsBtn" class="btn-primary">
+            Save & Connect to GitHub
+          </button>
+          <div id="settingsFeedback" class="banner hidden"></div>
         </div>
       </div>
+
+      <!-- Error / Notice Banner -->
+      <div id="globalBanner" class="banner hidden"></div>
     </div>
 
-    <div class="modal-overlay" id="progressModal">
-      <div class="modal-content">
-        <h3 class="modal-title" id="progressTitle">SCHEDULE IN PROGRESS</h3>
-        <div class="summary-block">
-          <span id="progressRepo">Repository</span>
-        </div>
-        <div class="progress-bar-container">
-          <div class="progress-bar-fill" id="progressBarFill"></div>
-          <div class="progress-text" id="progressText">0 / 0 (0%)</div>
-        </div>
-        <div class="summary-grid">
-          <div class="summary-block"><span>Status</span><div id="progressStatusText">Running...</div></div>
-          <div class="summary-block"><span>Time Remaining</span><div id="progressEtaText">Calculating...</div></div>
-        </div>
-        <div class="modal-actions hidden" id="progressActions">
-          <button type="button" class="ghost-button" onclick="window.location.href='/extension/index.html'">Dashboard</button>
-          <a class="ghost-button" id="viewRepoBtn" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">Repository</a>
-        </div>
-      </div>
-    </div>
-
-    <script src="/extension/script.js?v=6"></script>
-    <script>
-      function createFallingIcons() {
-        const bg = document.getElementById('githubBg');
-        const iconCount = 12;
-        const positions = [];
-        
-        for (let i = 0; i < iconCount; i++) {
-          let xPos;
-          let attempts = 0;
-          let validPosition = false;
-          
-          while (!validPosition && attempts < 10) {
-            xPos = Math.random() * 100;
-            validPosition = true;
-            for (let pos of positions) {
-              if (Math.abs(xPos - pos) < 15) {
-                validPosition = false;
-                break;
-              }
-            }
-            attempts++;
-          }
-          
-          if (validPosition) {
-            positions.push(xPos);
-            const icon = document.createElement('div');
-            icon.className = 'github-logo-fall';
-            icon.innerHTML = `<svg viewBox="0 0 16 16" width="40" height="40" fill="currentColor">
-              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
-            </svg>`;
-            const duration = 1.5 + Math.random() * 2;
-            const delay = -(Math.random() * duration);
-            icon.style.left = xPos + '%';
-            icon.style.animationDuration = duration + 's';
-            icon.style.animationDelay = delay + 's';
-            bg.appendChild(icon);
-          }
-        }
-      }
-      createFallingIcons();
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>
