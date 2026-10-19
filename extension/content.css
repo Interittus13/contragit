@@ -1,0 +1,199 @@
+/* ContraGit In-Page Profile Integration Styles */
+/* Strict scoping with .contragit-injected-* to prevent global CSS bleed */
+
+.contragit-injected-wrap {
+  display: inline-flex;
+  position: relative;
+  vertical-align: middle;
+  margin-left: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  z-index: 99;
+}
+
+.contragit-injected-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.14) 0%, rgba(6, 182, 212, 0.08) 100%);
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  cursor: pointer;
+  text-decoration: none !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1), 0 0 12px rgba(16, 185, 129, 0.15);
+  user-select: none;
+}
+
+.contragit-injected-btn:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.15) 100%);
+  border-color: #10b981;
+  color: #6ee7b7 !important;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}
+
+.contragit-injected-btn:active {
+  transform: translateY(0);
+}
+
+.contragit-injected-icon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.contragit-injected-badge {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-radius: 10px;
+  padding: 0 6px;
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Flyout Dock Panel */
+.contragit-injected-flyout {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  background: #0b0f19;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(16, 185, 129, 0.12);
+  color: #f1f5f9;
+  font-size: 12px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  backdrop-filter: blur(16px);
+  z-index: 1000;
+  animation: contragit-flyout-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes contragit-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.contragit-flyout-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 8px;
+}
+
+.contragit-flyout-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #f8fafc;
+}
+
+.contragit-flyout-brand span {
+  color: #34d399;
+}
+
+.contragit-flyout-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.contragit-flyout-close:hover {
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Telemetry Metrics */
+.contragit-telemetry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.contragit-telemetry-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.contragit-telemetry-label {
+  font-size: 10px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.contragit-telemetry-val {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  margin-top: 2px;
+}
+
+/* Action Buttons */
+.contragit-flyout-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contragit-action-btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #022013 !important;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+  transition: all 0.15s ease;
+}
+
+.contragit-action-btn-primary:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.45);
+}
+
+.contragit-gap-alert {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+}
